@@ -1,0 +1,11 @@
+{
+  "name": "mequinenza-3d-pro",
+  "version": "2.0.0",
+  "description": "Visor 3D interactivo del casco antiguo y castillo de Mequinenza (Aragón, España)",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "dependencies": {
+    "serve": "^14.2.0"
+  }
+}

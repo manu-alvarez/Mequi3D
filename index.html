@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#172538">
+<title>Mequinenza · Historia, Castillo y Poble Vell</title>
+<style>
+:root{color-scheme:dark;--panel:rgba(15,28,43,.88);--line:rgba(255,255,255,.16);--gold:#e8bc72;--text:#f4f1e9;--stone:#b8a184}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0f1c27;color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+#view{position:absolute;inset:0;z-index:0}canvas{display:block;width:100%;height:100%}
+header.brand{position:absolute;top:16px;left:16px;right:16px;z-index:10;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;pointer-events:none}
+.brand-box,.nav,.info,.tools,.gallery-modal,.legend{background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(14px);box-shadow:0 12px 36px #0003;border-radius:16px}
+.brand-box{padding:14px 17px;max-width:min(460px,75vw)}.eyebrow{font-size:10px;letter-spacing:.18em;color:var(--gold);font-weight:800;text-transform:uppercase}
+.brand-box h1{font-size:clamp(20px,3.5vw,32px);margin:4px 0 2px;line-height:1.1}
+.brand-box p{font-size:12px;opacity:.85;margin:0;line-height:1.5}
+.status{font-size:11px;padding:8px 12px;border-radius:99px;background:#122c32;border:1px solid #5c9b8b;color:#bce9d9;white-space:nowrap;pointer-events:auto}
+nav{position:absolute;left:16px;top:150px;width:190px;padding:10px;z-index:10;display:grid;gap:5px}
+nav button,.tools button,.info button{font:inherit;color:inherit;border:1px solid transparent;background:transparent;cursor:pointer;border-radius:10px;padding:10px;text-align:left;font-size:12px;pointer-events:auto}
+nav button:hover,nav button.active,.tools button:hover{background:#ffffff18;border-color:#ffffff20}
+aside.info{position:absolute;right:16px;bottom:16px;width:min(320px,calc(100vw-32px));padding:16px;z-index:10;overflow-y:auto;max-height:70vh;pointer-events:auto}
+aside.info h2{font-size:17px;margin:0 0 6px;color:var(--gold)}
+aside.info .meta{font-size:11px;color:#e9c889;margin-bottom:10px}
+aside.info p{font-size:12px;line-height:1.6;color:#d5dbe1;margin:0 0 10px}
+aside.info h3{font-size:13px;color:var(--gold);margin:12px 0 4px;text-transform:uppercase;letter-spacing:.08em}
+.tools{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:4px;padding:8px;max-width:calc(100vw-32px);z-index:10;flex-wrap:wrap;justify-content:center;pointer-events:auto}
+.tools button{text-align:center;white-space:nowrap;font-size:11px;padding:9px 10px}
+.hint{position:absolute;bottom:82px;left:16px;max-width:260px;padding:10px 12px;border-radius:12px;background:#102033bb;border:1px solid var(--line);font-size:11px;line-height:1.5;color:#e3e7eb;z-index:10;pointer-events:auto}
+@media(max-width:650px){header.brand{top:10px;left:10px;right:10px}.brand-box{padding:11px 12px}.brand-box p{max-width:260px}.status{font-size:0;padding:10px}.status:after{content:"3D";font-size:11px}nav{top:auto;bottom:160px;left:10px;width:150px;padding:6px}nav button{padding:8px;font-size:11px}aside.info{right:10px;bottom:10px;width:calc(100vw-160px);padding:12px}aside.info p{font-size:11px}aside.info .meta{display:none}.tools{bottom:10px;left:10px;right:10px;transform:none;justify-content:center}.tools button{font-size:10px;padding:8px 7px}.hint{display:none}}
+
+/* Galería visual */
+.gallery{position:absolute;top:16px;right:16px;width:min(420px,90vw);z-index:10;overflow-y:auto;max-height:70vh;pointer-events:auto;display:none}
+.gallery.active{display:block}
+.gallery h3{font-size:14px;color:var(--gold);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.08em}
+.gallery-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.gallery-item{aspect-ratio:4/3;overflow:hidden;border-radius:10px;border:1px solid var(--line);cursor:pointer;position:relative}
+.gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.gallery-item:hover img{transform:scale(1.05)}
+.gallery-item span{position:absolute;bottom:4px;left:4px;right:4px;background:rgba(0,0,0,.6);color:white;font-size:10px;padding:2px 6px;border-radius:4px;pointer-events:none}
+
+/* Modal de imagen grande */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;pointer-events:auto}
+.modal.active{display:flex}
+.modal img{max-width:90vw;max-height:80vh;object-fit:contain;border-radius:12px;border:2px solid var(--line)}
+.modal .close{position:absolute;top:20px;right:30px;font-size:32px;color:white;cursor:pointer;z-index:60}
+.modal .caption{margin-top:16px;font-size:13px;color:#d5dbe1;text-align:center;max-width:600px;line-height:1.5}
+
+/* Pestañas info */
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{flex:1;background:transparent;border:1px solid var(--line);color:#d5dbe1;padding:6px 8px;border-radius:8px;font-size:11px;cursor:pointer}
+.tabs button.active{background:var(--gold);color:#172538;font-weight:800}
+
+/* Línea de tiempo */
+.timeline{position:relative;padding-left:14px}
+.timeline::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold)}
+.timeline-item{position:relative;margin-bottom:10px;padding-left:10px}
+.timeline-item::before{content:'';position:absolute;left:-6px;top:2px;width:6px;height:6px;background:var(--gold);border-radius:50%}
+.timeline-year{font-weight:800;color:var(--gold);font-size:12px}
+.timeline-text{font-size:12px;color:#d5dbe1;margin-top:2px}
+
+/* Botón 3D */
+.btn-3d{position:absolute;bottom:16px;right:16px;z-index:10;background:var(--gold);color:#172538;font-weight:800;padding:14px 24px;border-radius:12px;text-decoration:none;box-shadow:0 8px 24px rgba(232,188,114,.4);pointer-events:auto;transition:transform .2s}
+.btn-3d:hover{transform:scale(1.05)}
+
+/* Fotos de referencia histórica */
+.ref-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:10px}
+.ref-item{aspect-ratio:4/3;overflow:hidden;border-radius:8px;border:1px solid var(--line);cursor:pointer}
+.ref-item img{width:100%;height:100%;object-fit:cover}
+.ref-item.caption{font-size:10px;color:#b8c2cc;margin-top:4px;text-align:center}
+</style>
+</head>
+<body>
+<div id="view"></div>
+
+<header class="brand">
+ <div class="brand-box">
+  <div class="eyebrow">Patrimonio · Aragón · España</div>
+  <h1>Mequinenza Histórica</h1>
+  <p>Castillo medieval, casco antiguo y confluencia del Ebro y el Segre. Recreación visual y visor 3D interactivo.</p>
+ </div>
+ <div class="status">● Visor 3D disponible</div>
+</header>
+
+<nav aria-label="Navegación">
+ <button class="active" data-section="historia">⌂ &nbsp; Historia</button>
+ <button data-section="castillo">♜ &nbsp; Castillo</button>
+ <button data-section="pueblo">⌂ &nbsp; Casco antiguo</button>
+ <button data-section="rios">≈ &nbsp; Ríos Ebro y Segre</button>
+ <button data-section="fotos">📷 &nbsp; Galería fotográfica</button>
+ <button data-section="visor">🎮 &nbsp; Visor 3D</button>
+</nav>
+
+<aside class="info">
+ <h2 id="info-title">Historia de Mequinenza</h2>
+ <div class="meta" id-info-meta>Datos extraídos de paneles informativos del castillo</div>
+
+ <div class="tabs">
+  <button class="active" data-tab="historia">Historia</button>
+  <button data-tab="reconstruccion">Reconstrucción</button>
+  <button data-tab="ubicacion">Ubicación</button>
+ </div>
+
+ <div id="tab-historia">
+  <p>En 1192 la villa y el castillo fueron concedidos al Comte d'Urdeil, siendo posteriormente dominio de Ramón Guillem de Montcada en los principios del siglo XIII, y más tarde, en 1581, del Marqués de Alitona.</p>
+  <p>En 1722, al no haber varones en la Casa de los Montcada, el castillo pasa a pertenecer al heredero de la Casa Ducal de Medinaceli, tras casarse éste con Maria Teresa de Montcada.</p>
+  <h3>Guerra de la Independencia</h3>
+  <p>En 1810 y durante la Guerra de la Independencia, la fortaleza cayó en manos de los franceses al mando del general Suchet, después de una encarnizada defensa a cargo de los 1.200 hombres que la guarnecían y que ya habían rechazado otros ataques en 1808 y 1809. Considerada ésta una victoria importante por los franceses, inscribieron el nombre de Mequinenza en el Arco de Triunfo de la parisina plaza de L'Étoile.</p>
+  <p>Finalmente en 1816 el Rey Fernando VII incorpora Mequinenza y su castillo a la Corona. Después de la Guerra Civil, 1939, el castillo queda sin guarnición y abandonado.</p>
+  <div class="timeline">
+   <div class="timeline-item"><div class="timeline-year">1192</div><div class="timeline-text">Concesión al Comte d'Urdeil</div></div>
+   <div class="timeline-item"><div class="timeline-year">Siglo XIII</div><div class="timeline-text">Dominio de Ramón Guillem de Montcada</div></div>
+   <div class="timeline-item"><div class="timeline-year">1581</div><div class="timeline-text">Pasa al Marqués de Alitona</div></div>
+   <div class="timeline-item"><div class="timeline-year">1722</div><div class="timeline-text">Casa Ducal de Medinaceli (María Teresa de Montcada)</div></div>
+   <div class="timeline-item"><div class="timeline-year">1808-1810</div><div class="timeline-text">Defensa contra los franceses (general Suchet). 1.200 defensores.</div></div>
+   <div class="timeline-item"><div class="timeline-year">1816</div><div class="timeline-text">Fernando VII incorpora Mequinenza a la Corona</div></div>
+   <div class="timeline-item"><div class="timeline-year">1939</div><div class="timeline-text">Abandono tras la Guerra Civil</div></div>
+   <div class="timeline-item"><div class="timeline-year">1959</div><div class="timeline-text">Reconstrucción por ENHER</div></div>
+   <div class="timeline-item"><div class="timeline-year">1960</div><div class="timeline-text">Medalla de Plata (Asociación Española de Amigos de los Castillos)</div></div>
+  </div>
+ </div>
+
+ <div id="tab-reconstruccion" style="display:none">
+  <p>Al emprender ENHER los trabajos hidráulicos en la cuenca del Ebro, se pensó en restaurar el castillo. Sólo la gran bóveda de piedra, en cuarto al salón principal, solo quedaban los muros y cuatro arcos que sostenían la techumbre.</p>
+  <p>Dado el estado de avanzada destrucción de todas sus dependencias, no era factible una simple restauración. Se optó por una verdadera reconstrucción, adaptándolo para la función de residencia, tal como había sido utilizado en la época de los Montcada.</p>
+  <p>La alteración de la fachada fue muy poca, sólo se abrieron algunas ventanas. Por el contrario, el patio tuvo que reconstruirse ya que, al cambiar de lado la escalera, ésta inutilizaba dos de los tres arcos del pórtico, anulando con ello los dos elementos más bellos del patio.</p>
+  <p>En la reconstrucción del salón se efectuaron unos desniveles con el fin de acceder al gran ventanal desde el cual se domina la panorámica de la confluencia del río Segre con el Ebro. Se construyeron además tres escaleras para el acceso a las plantas reconstruidas y que albergaban las habitaciones.</p>
+  <p>Esta difícil labor de reconstrucción del castillo realizada por ENHER en 1959 tuvo su reconocimiento por la Asociación Española de Amigos de los Castillos al otorgarle el 16 de marzo de 1960 la Medalla de Plata por su gesto de amor al arte y la cultura, que representa el salvar una ruina segura, un monumento al que van unidos siete siglos de Historia de nuestra patria.</p>
+ </div>
+
+ <div id="tab-ubicacion" style="display:none">
+  <p>La privilegiada situación, en la confluencia del Ebro con el Segre, confiere al antiguo pueblo de Mequinenza un valor estratégico excepcional, siendo antigua ruta obligada para cruzar los dos ríos.</p>
+  <p>César, en su "De Bello Divino", parece referirse al cuando habla de "Octogesa".</p>
+  <p>En lo alto de la escarpada colina que domina el pueblo, a unos 185 m sobre el nivel de la confluencia de ambos ríos, se encuentra el castillo y es indudable que íberos, romanos, visigodos y musulmanes debieron ocupar y fortificar esta altura. Sin embargo, la construcción del mismo es posterior a la reconquista de Mequinenza en 1149 por Ramon Berenguer IV.</p>
+ </div>
+
+ <button id="reset">Restablecer vista</button>
+</aside>
+
+<div class="gallery" id="gallery">
+ <h3 id="gallery-title">Galería</h3>
+ <div class="gallery-grid" id="gallery-grid"></div>
+</div>
+
+<div class="modal" id="modal">
+ <div class="close" onclick="closeModal()">✕</div>
+ <img id="modal-img" src="" alt="">
+ <div class="caption" id="modal-caption"></div>
+</div>
+
+<a href="visor-3d.html" class="btn-3d">🎮 Abrir Visor 3D Interactivo</a>
+
+<div class="hint">MODELO CONCEPTUAL<br>La geometría se ha recreado proceduralmente a partir de referencias visuales; no es un levantamiento topográfico ni una reconstrucción arqueológica exacta.</div>
+
+<div class="tools">
+ <button id="btn-gallery">📷 Galería: abrir</button>
+ <button id="btn-3d">🎮 Visor 3D</button>
+</div>
+
+<script>
+const sections = document.querySelectorAll('nav button');
+const infoSections = document.querySelectorAll('#tab-historia,#tab-reconstruccion,#tab-ubicacion');
+const tabs = document.querySelectorAll('.tabs button');
+const infoTitle = document.getElementById('info-title');
+const infoMeta = document.getElementById('info-meta');
+
+const data = {
+ historia: { title: 'Historia de Mequinenza', meta: 'Datos extraídos de paneles informativos del castillo', section: 'tab-historia' },
+ reconstruccion: { title: 'Reconstrucción del Castillo', meta: 'Trabajos realizados por ENHER en 1959', section: 'tab-reconstruccion' },
+ ubicacion: { title: 'Ubicación Estratégica', meta: 'Confluencia del Ebro y el Segre', section: 'tab-ubicacion' }
+};
+
+sections.forEach(b => b.addEventListener('click', () => {
+ sections.forEach(x => x.classList.toggle('active', x === b));
+ const sec = b.dataset.section;
+ infoSections.forEach(s => s.style.display = 'none');
+ tabs.forEach(t => t.classList.remove('active'));
+ if (data[sec]) {
+  document.getElementById(data[sec].section).style.display = 'block';
+  infoTitle.textContent = data[sec].title;
+  infoMeta.textContent = data[sec].meta;
+  document.querySelector(`.tabs button[data-tab="${sec}"]`).classList.add('active');
+ }
+}));
+
+tabs.forEach(t => t.addEventListener('click', () => {
+ tabs.forEach(x => x.classList.remove('active'));
+ t.classList.add('active');
+ const tab = t.dataset.tab;
+ infoSections.forEach(s => s.style.display = 'none');
+ document.getElementById(tab).style.display = 'block';
+ infoTitle.textContent = data[tab].title;
+ infoMeta.textContent = data[tab].meta;
+}));
+
+// Galería dinámica
+const gallery = document.getElementById('gallery');
+const galleryGrid = document.getElementById('gallery-grid');
+const galleryTitle = document.getElementById('gallery-title');
+const btnGallery = document.getElementById('btn-gallery');
+let galleryOpen = false;
+
+const categorias = {
+ castillo: { titulo: 'Castillo de Mequinenza', fotos: [] },
+ pueblo: { titulo: 'Casco Antiguo (Poble Vell)', fotos: [] },
+ vistas: { titulo: 'Vistas Generales del Pueblo', fotos: [] },
+ iglesia: { titulo: 'Iglesia y Elementos Religiosos', fotos: [] },
+ enderroc: { titulo: 'Derribo y Reconstrucción', fotos: [] }
+};
+
+// Generar referencias de fotos locales
+for (let i = 1; i <= 8; i++) categorias.castillo.fotos.push({ src: `assets/ref/castillo/castell${i}.jpg`, cap: `Castillo ${i}` });
+for (let i = 1; i <= 99; i++) categorias.pueblo.fotos.push({ src: `assets/ref/lopoble/poble${i}.jpg`, cap: `Pueblo ${i}` });
+for (let i = 1; i <= 67; i++) categorias.vistas.fotos.push({ src: `assets/ref/generals/generals${i}.jpg`, cap: `Vista ${i}` });
+for (let i = 1; i <= 39; i++) categorias.iglesia.fotos.push({ src: `assets/ref/esglesia/esglesia${i}.jpg`, cap: `Iglesia ${i}` });
+for (let i = 1; i <= 12; i++) categorias.enderroc.fotos.push({ src: `assets/ref/enderroc/enderroc${i}.jpg`, cap: `Reconstrucción ${i}` });
+
+function renderGallery(catKey) {
+ const cat = categorias[catKey];
+ galleryTitle.textContent = cat.titulo;
+ galleryGrid.innerHTML = '';
+ cat.fotos.slice(0, 24).forEach(f => {
+  const div = document.createElement('div');
+  div.className = 'gallery-item';
+  div.innerHTML = `<img src="${f.src}" alt="${f.cap}" loading="lazy"><span>${f.cap}</span>`;
+  div.onclick = () => openModal(f.src, f.cap);
+  galleryGrid.appendChild(div);
+ });
+}
+
+btnGallery.addEventListener('click', () => {
+ galleryOpen = !galleryOpen;
+ gallery.classList.toggle('active', galleryOpen);
+ btnGallery.textContent = galleryOpen ? '📷 Galería: cerrar' : '📷 Galería: abrir';
+ if (galleryOpen) renderGallery('castillo');
+});
+
+document.getElementById('btn-3d').addEventListener('click', () => {
+ window.location.href = 'visor-3d.html';
+});
+
+function openModal(src, cap) {
+ const m = document.getElementById('modal');
+ document.getElementById('modal-img').src = src;
+ document.getElementById('modal-caption').textContent = cap;
+ m.classList.add('active');
+}
+function closeModal() { document.getElementById('modal').classList.remove('active'); }
+document.getElementById('modal').addEventListener('click', (e) => { if (e.target === document.getElementById('modal')) closeModal(); });
+
+document.getElementById('reset').addEventListener('click', () => { window.scrollTo(0,0); });
+</script>
+</body>
+</html>

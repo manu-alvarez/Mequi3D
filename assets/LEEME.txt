@@ -1,0 +1,23 @@
+INSTRUCCIONES PARA AÑADIR TEXTURAS PBR
+=====================================
+
+1. Coloca tus fotografías de texturas en esta carpeta (/assets/) con los siguientes nombres exactos:
+
+   piedra.jpg   - Textura de pared de castillo y muros de piedra
+   ruinas.jpg   - Textura de piedra irregular para el casco antiguo (Poble Vell)
+
+2. El código de Three.js (index.html) cargará automáticamente estas imágenes
+   como mapas de textura PBR sobre la geometría del castillo y las casas.
+
+3. Si los archivos no existen, el visor usará colores base (procedurales)
+   y mostrará un aviso en la consola del navegador.
+
+RECOMENDACIONES DE FUENTES (texturas libres de derechos):
+- https://polyhaven.com/
+- https://textures.com/
+- https://ambientcg.com/
+
+IMPORTANTE: Este modelo es una recreación conceptual procedimental basada
+en referencias visuales. No es un levantamiento topográfico ni una
+reconstrucción arqueológica exacta. Para un gemelo digital de alta fidelidad
+se requieren datos topográficos reales, cartografía o fotogrametría del castillo.
