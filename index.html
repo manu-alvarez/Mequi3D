@@ -174,6 +174,11 @@
     <!-- Bottom Dock: Controls (Time of Day, Names, Day Passing, Fullscreen) -->
     <footer class="bottom-dock">
       <div class="dock-panel glass-panel interactive">
+        <button class="dock-btn mobile-sidebar-toggle" id="visor-sidebar-toggle-btn" title="Ver lugares y modos del Poble Vell">
+          <span>📍</span>
+          <span>Lugares</span>
+        </button>
+
         <button class="dock-btn" id="visor-nombres-alternar" title="Mostrar u ocultar los nombres de los lugares en 3D">
           <span>🏷️</span>
           <span>Nombres</span>
@@ -594,14 +599,17 @@
     </div>
   </div>
 
-  <!-- Lightbox Container -->
-  <div class="photo-lightbox-backdrop" id="global-photo-lightbox">
-    <div class="photo-lightbox-modal">
-      <button class="photo-lightbox-close" id="lightbox-close-btn">&times;</button>
-      <img class="photo-lightbox-img" id="lightbox-img" src="" alt="Mequinenza Histórica">
+  <!-- Lightbox Container (Fullscreen High-Contrast Viewer) -->
+  <div class="photo-lightbox-backdrop" id="global-photo-lightbox" role="dialog" aria-modal="true" aria-label="Visor de fotografía histórica">
+    <button class="photo-lightbox-close-corner" id="lightbox-close-corner-btn" title="Cerrar imagen (Esc)">&times;</button>
+    <div class="photo-lightbox-modal" id="photo-lightbox-modal-box">
+      <img class="photo-lightbox-img" id="lightbox-img" src="" alt="Mequinenza Histórica" title="Haz clic en la imagen o en Cerrar para salir">
       <div class="photo-lightbox-caption">
         <h3 id="lightbox-title"></h3>
         <p id="lightbox-subtitle"></p>
+        <button class="lightbox-footer-close-btn" id="lightbox-bottom-close-btn" type="button">
+          <span style="font-size:16px;margin-right:6px">✕</span> Cerrar fotografía <span class="esc-badge">ESC</span>
+        </button>
       </div>
     </div>
   </div>

@@ -2393,66 +2393,304 @@ html, body {
   object-fit: cover;
 }
 
-/* Lightbox Modal */
+/* ==========================================================================
+   Lightbox Modal (High-Contrast, Visible Close Buttons & Touch Friendly)
+   ========================================================================== */
 .photo-lightbox-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.92);
-  backdrop-filter: blur(12px);
-  z-index: 2000;
+  background: rgba(3, 7, 13, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 999999;
   display: none;
   align-items: center;
   justify-content: center;
   padding: 24px;
+  cursor: zoom-out;
 }
 
 .photo-lightbox-backdrop.active {
+  display: flex !important;
+}
+
+.photo-lightbox-close-corner {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  font-size: 32px;
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000000;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.photo-lightbox-close-corner:hover {
+  background: rgba(220, 53, 69, 0.95);
+  border-color: #ffffff;
+  transform: scale(1.08);
 }
 
 .photo-lightbox-modal {
-  max-width: 90vw;
-  max-height: 90vh;
+  max-width: 94vw;
+  max-height: 92vh;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  cursor: default;
 }
 
 .photo-lightbox-img {
   max-width: 100%;
-  max-height: 75vh;
+  max-height: 72vh;
   object-fit: contain;
-  border-radius: 6px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+  border-radius: 8px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.85);
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .photo-lightbox-caption {
-  margin-top: 12px;
+  margin-top: 14px;
   text-align: center;
+  max-width: 720px;
 }
 
 .photo-lightbox-caption h3 {
   margin: 0;
-  font-size: 16px;
-  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
 }
 
 .photo-lightbox-caption p {
-  margin: 4px 0 0;
-  font-size: 12px;
+  margin: 5px 0 0;
+  font-size: 13px;
   color: var(--text-muted);
+  line-height: 1.4;
 }
 
-.photo-lightbox-close {
-  position: absolute;
-  top: -40px;
-  right: 0;
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-size: 32px;
+.lightbox-footer-close-btn {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 9999px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lightbox-footer-close-btn:hover {
+  background: rgba(220, 53, 69, 0.85);
+  border-color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.esc-badge {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* ==========================================================================
+   COMPREHENSIVE RESPONSIVE DESIGN (Desktop, Tablet, Mobile)
+   ========================================================================== */
+
+/* Toggle Button for Mobile Drawer in Bottom Dock */
+.mobile-sidebar-toggle {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .mobile-sidebar-toggle {
+    display: inline-flex;
+  }
+
+  .ui-overlay {
+    padding: 10px;
+  }
+
+  /* Top Bar & Brand on Tablet/Mobile */
+  .top-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .brand-card-mockup {
+    padding: 8px 12px;
+  }
+
+  .brand-main-title {
+    font-size: 14px;
+  }
+
+  .brand-sub-title {
+    font-size: 10px;
+  }
+
+  /* Main Navigation Tabs: Smooth Horizontal Scroll */
+  .poble-nav-tabs {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px;
+    gap: 4px;
+    scrollbar-width: none;
+  }
+
+  .poble-nav-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .poble-nav-btn {
+    padding: 7px 12px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Search Bar */
+  .visor-buscador {
+    flex: 1;
+    min-width: 130px;
+  }
+
+  .visor-buscar-input {
+    width: 100%;
+    font-size: 12px;
+    padding: 6px 10px 6px 30px;
+  }
+
+  /* Left Sidebar: Slide-Up Mobile Drawer */
+  .sidebar-nav {
+    position: fixed;
+    top: auto;
+    bottom: 84px;
+    left: 10px;
+    width: min(300px, calc(100vw - 20px));
+    max-height: 50vh;
+    overflow-y: auto;
+    z-index: 100;
+    transform: translateY(120%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+  }
+
+  .sidebar-nav.mobile-open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Right Dossier Card: Docked Bottom Sheet */
+  .dossier-card {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 52vh;
+    border-radius: 20px 20px 0 0;
+    z-index: 110;
+    transform: translateY(105%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.6);
+  }
+
+  .dossier-card.visible {
+    transform: translateY(0);
+  }
+
+  /* Bottom Dock Scaling */
+  .bottom-dock {
+    bottom: 12px;
+    left: 8px;
+    right: 8px;
+  }
+
+  .dock-panel {
+    padding: 6px 8px;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .dock-panel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dock-time-control input[type="range"] {
+    width: 75px;
+  }
+
+  /* Lightbox on Mobile/Tablet */
+  .photo-lightbox-close-corner {
+    top: 14px;
+    right: 14px;
+    width: 44px;
+    height: 44px;
+    font-size: 26px;
+  }
+
+  .photo-lightbox-img {
+    max-height: 65vh;
+  }
+
+  .photo-lightbox-caption h3 {
+    font-size: 15px;
+  }
+
+  .photo-lightbox-caption p {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 500px) {
+  .brand-title-wrap {
+    display: none;
+  }
+
+  .dock-btn span:last-child {
+    display: none;
+  }
+
+  .dock-btn {
+    padding: 8px 10px;
+  }
+
+  .dock-time-control .time-readout {
+    font-size: 11px;
+    min-width: 32px;
+  }
 }
 
 
