@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#070d14">
   <title>Mequinenza 3D · Visor Histórico del Castillo y Poble Vell</title>
-  <meta name="description" content="Gemelo digital y visor 3D fotorrealista del Castillo medieval de Mequinenza, el casco antiguo (Poble Vell) y la confluencia de los ríos Ebro y Segre.">
+  <meta name="description" content="Gemelo digital y visor histórico 3D del Poble Vell de Mequinenza, el Castillo medieval y la confluencia de los ríos Ebro y Segre. Reconstruido con fotografías antiguas, planos y fuentes oficiales.">
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏰</text></svg>">
@@ -31,12 +31,26 @@
   <!-- 3D Screen Space Pins Layer -->
   <div id="map-pins-layer" class="pin-layer"></div>
 
+  <!-- Guided Tour HUD Banner (De la Plaça d'Armes a Lo Muro) -->
+  <div class="tour-hud-banner glass-panel interactive" id="tour-hud-banner">
+    <div class="tour-step-info">
+      <span class="tour-step-tag" id="tour-step-counter">Parada 1 de 7</span>
+      <span class="tour-step-name" id="tour-step-title">Plaça d'Armes</span>
+    </div>
+    <div class="tour-progress-track">
+      <div class="tour-progress-bar-fill" id="tour-step-progress-fill"></div>
+    </div>
+    <button class="tour-btn-sm" id="tour-prev-btn" title="Parada anterior">◀</button>
+    <button class="tour-btn-sm" id="tour-next-btn" title="Siguiente parada">▶</button>
+    <button class="tour-btn-sm" id="tour-stop-btn" style="background:#e06c75;border-color:#e06c75" title="Salir del recorrido">✕</button>
+  </div>
+
   <!-- Street View Top-Right Badge -->
   <div class="street-view-badge glass-panel interactive" id="street-view-badge" style="display:none;">
     <span class="badge-cam-icon">📷</span>
     <div class="badge-text-col">
-      <span class="badge-title">RECREACIÓN VISUAL FOTORREALISTA</span>
-      <span class="badge-desc">Casco antiguo de Mequinenza y castillo medieval con la confluencia del Ebro y Segre.</span>
+      <span class="badge-title">CALLEJERO HISTÓRICO · POBLE VELL</span>
+      <span class="badge-desc">Calles empedradas, caserones de piedra caliza y vistas al Castillo de Mequinenza</span>
     </div>
     <button class="btn-return-aerial" id="btn-return-aerial">✕ Volver a Vista Aérea</button>
   </div>
@@ -44,46 +58,127 @@
   <!-- UI Overlay Frame -->
   <div class="ui-overlay">
 
-    <!-- Top Bar: Brand Badge -->
+    <!-- Top Bar: Brand Badge, Search Bar & Panorama Switcher -->
     <header class="top-bar">
+      <!-- Brand Card -->
       <div class="brand-card-mockup glass-panel interactive">
         <div class="brand-icon-box">🏰</div>
         <div class="brand-title-wrap">
-          <div class="brand-main-title">Mequinenza</div>
-          <div class="brand-sub-title">Castillo y casco antiguo</div>
+          <div class="brand-main-title">Poble Vell de Mequinenza</div>
+          <div class="brand-sub-title">Reconstrucción Histórica · 1965</div>
         </div>
+      </div>
+
+      <!-- Live Search Bar (Buscador de calles y lugares) -->
+      <div class="visor-buscador interactive">
+        <div class="visor-buscador-input-wrap">
+          <span style="font-size:14px;color:var(--text-muted)">🔍</span>
+          <input type="text" id="visor-search-input" class="visor-buscar-input" placeholder="Buscar calle o casa (Major, Saragossa, Armes...)" autocomplete="off">
+        </div>
+        <div class="visor-buscador-results" id="visor-search-results"></div>
+      </div>
+
+      <!-- Panorama View Selector Dropdown -->
+      <div class="glass-panel interactive" style="padding:4px 8px;display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;color:var(--text-muted);font-weight:700">CÁMARA:</span>
+        <select id="pano-view-select" class="pano-switcher-dropdown" aria-label="Seleccionar perspectiva panorámica">
+          <option value="real_castillo_confluencia">🌄 Desde el Castillo (Foto real 4288x3216)</option>
+          <option value="castillo_fachada">🏰 Fachada del Castillo (5449x3150)</option>
+          <option value="poble_calle">🏚️ Calles del Poble Vell (Empedrado)</option>
+          <option value="gemelo_digital">💎 Gemelo Digital 3D (Cenital)</option>
+        </select>
       </div>
     </header>
 
-    <!-- Left Sidebar: Landmarks Navigation -->
+    <!-- Left Sidebar: Landmarks Navigation & Tour Options -->
     <nav class="sidebar-nav glass-panel interactive" aria-label="Navegación de monumentos">
+      <div class="nav-section-title">Lugares del Pueblo</div>
+      
       <button class="nav-item-btn active" data-place="overview">
-        <span class="nav-icon">🏠</span>
+        <span class="nav-icon">🌐</span>
         <span>Vista general</span>
       </button>
+
       <button class="nav-item-btn" data-place="castillo">
         <span class="nav-icon">🏰</span>
-        <span>Castillo</span>
+        <span>El Castillo (185 m)</span>
       </button>
-      <button class="nav-item-btn" data-place="poble">
+
+      <button class="nav-item-btn" data-place="pueblo">
         <span class="nav-icon">🏚️</span>
-        <span>Casco antiguo</span>
+        <span>Poble Vell (Ruinas)</span>
       </button>
-      <button class="nav-item-btn" data-place="ebro">
-        <span class="nav-icon">〰️</span>
-        <span>Río Ebro</span>
+
+      <button class="nav-item-btn" data-place="placa_armes">
+        <span class="nav-icon">🏛️</span>
+        <span>Plaça d'Armes</span>
       </button>
-      <button class="nav-item-btn" data-place="segre">
-        <span class="nav-icon">〰️</span>
-        <span>Río Segre</span>
+
+      <button class="nav-item-btn" data-place="esglesia">
+        <span class="nav-icon">⛪</span>
+        <span>Iglesia de la Asunción</span>
       </button>
-      <button class="nav-item-btn" data-place="poi">
-        <span class="nav-icon">📍</span>
-        <span>Puntos de interés</span>
+
+      <button class="nav-item-btn" data-place="carrer_major">
+        <span class="nav-icon">🏘️</span>
+        <span>Carrer Major</span>
+      </button>
+
+      <button class="nav-item-btn" data-place="ca_la_vila">
+        <span class="nav-icon">🏢</span>
+        <span>Plaça de Ca la Vila</span>
+      </button>
+
+      <button class="nav-item-btn" data-place="carrer_saragossa">
+        <span class="nav-icon">🏠</span>
+        <span>Carrer Saragossa (53 casas)</span>
+      </button>
+
+      <button class="nav-item-btn" data-place="lo_muro">
+        <span class="nav-icon">🌊</span>
+        <span>Lo Muro (Paseo fluvial)</span>
+      </button>
+
+      <button class="nav-item-btn" data-place="llauts">
+        <span class="nav-icon">⛵</span>
+        <span>Río Ebro & Llaüts</span>
+      </button>
+
+      <button class="nav-item-btn" data-place="pont_segre">
+        <span class="nav-icon">🔀</span>
+        <span>Pont de Segre & Confluencia</span>
+      </button>
+
+      <button class="nav-item-btn" data-place="colegio">
+        <span class="nav-icon">🏫</span>
+        <span>Grupo Escolar (Museos)</span>
+      </button>
+
+      <button class="nav-item-btn" data-place="mina">
+        <span class="nav-icon">⛏️</span>
+        <span>Cuenca Minera</span>
+      </button>
+
+      <button class="nav-item-btn" data-place="paneles">
+        <span class="nav-icon">📜</span>
+        <span>Paneles Oficiales</span>
+      </button>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section-title">Experiencias y Memoria</div>
+
+      <button id="btn-start-guided-tour" class="nav-action-btn btn-tour">
+        <span>🎬</span>
+        <span>Recorrido Histórico (7 paradas)</span>
+      </button>
+
+      <button id="btn-open-photo-archive" class="nav-action-btn btn-walk">
+        <span>📸</span>
+        <span>Archivo Fotográfico (440+ fotos)</span>
       </button>
     </nav>
 
-    <!-- Bottom Left Navigation Group (Compass, Zoom & Interactive 3D Walk) -->
+    <!-- Bottom Left Navigation Group (Compass, Zoom & Street Walk) -->
     <div class="bottom-left-group interactive">
       <div class="compass-zoom-row">
         <div class="compass-circle glass-panel" id="compass-rose" title="Orientar al Norte">
@@ -99,79 +194,106 @@
         </div>
       </div>
 
-      <button class="interactive-3d-btn glass-panel" id="btn-toggle-walk" title="Entrar en el paseo fotorrealista a pie">
+      <button class="interactive-3d-btn glass-panel" id="btn-toggle-walk" title="Conmutar entre vista panorámica y paseo a pie por el callejero">
         <span class="vr-icon">🥽</span>
         <div class="btn-text-col">
-          <span class="btn-title">Vista interactiva en 3D</span>
+          <span class="btn-title">Paseo a Pie por las Calles</span>
           <span class="btn-sub">Gira, explora y descubre el entorno</span>
         </div>
       </button>
     </div>
 
-    <!-- Right Information Drawer / Active Landmark Dossier -->
+    <!-- Right Information Drawer / Active Landmark Dossier with Real Photos -->
     <aside class="info-drawer glass-panel interactive" id="info-drawer">
       <div class="info-hero-img-wrap">
-        <img id="drawer-img" class="info-hero-img" src="assets/ref/castillo/castell3.jpg" alt="Castillo de Mequinenza">
+        <img id="drawer-img" class="info-hero-img" src="assets/ref/wikimedia/castillo/mequinenza_desde_castillo.jpg" alt="Monumento">
         <button class="drawer-close-btn" id="drawer-close-btn" title="Cerrar panel">✕</button>
       </div>
 
       <div class="info-body">
-        <h2 id="drawer-title">Castillo de Mequinenza</h2>
+        <h2 id="drawer-title">Panorámica de Mequinenza</h2>
+        <span id="drawer-subtitle" style="font-size:12px;color:var(--text-muted);font-weight:600">Confluencia del Ebro y Segre</span>
+
+        <div class="info-meta-chips">
+          <span class="meta-chip chip--documentado" id="drawer-evidence">🟢 Documentado</span>
+          <span class="meta-chip" id="drawer-era">Siglos XII - XX</span>
+          <span class="meta-chip" id="drawer-alt">Altitud: 148 m</span>
+        </div>
+
         <p class="info-desc" id="drawer-desc">
-          Fortaleza medieval construida entre los siglos XII y XIII, de la que se conservan sus murallas, torres y el recinto principal. Desde lo alto del cerro, domina la confluencia del Ebro y el Segre.
+          Fotografía panorámica histórica auténtica tomada desde las alturas del Castillo de Mequinenza dominando la confluencia fluvial del río Segre y el Ebro.
         </p>
 
-        <div class="info-facts-list">
-          <div class="fact-row">
-            <span class="fact-icon">🏰</span>
-            <span id="drawer-era">Siglo XII - XIII</span>
+        <div class="info-history-box" id="drawer-history">
+          <strong>Dato Histórico:</strong> Identificada por Julio César bajo el nombre de "Octogesa", la estratégica confluencia fue llave militar y comercial durante dos milenios.
+        </div>
+
+        <!-- Real Historical Photo Strip for This Exact Place -->
+        <div class="dossier-photo-strip-wrap">
+          <div class="dossier-section-title">
+            <span>Fotos Históricas de este Lugar</span>
+            <span id="dossier-photo-count" style="font-size:10px;color:var(--text-dim)">(5 fotos)</span>
           </div>
-          <div class="fact-row">
-            <span class="fact-icon">📍</span>
-            <span id="drawer-loc">Mequinenza, Aragón</span>
-          </div>
-          <div class="fact-row">
-            <span class="fact-icon">⛰️</span>
-            <span id="drawer-alt">Altitud: 148 m aprox.</span>
+          <div class="dossier-photo-strip" id="dossier-photo-strip">
+            <!-- Dynamic thumbnails injected by JavaScript -->
           </div>
         </div>
 
-        <button class="btn-explore-landmark primary" id="btn-drawer-explore">
-          <span>Explorar</span>
-          <span class="arrow">→</span>
-        </button>
+        <div class="info-actions">
+          <button class="btn-explore-landmark primary" id="btn-drawer-explore-photos">
+            <span>Ver Archivo Completo</span>
+            <span>→</span>
+          </button>
+          <button class="action-btn-sm" id="btn-drawer-view-panel">
+            <span>📜</span>
+            <span>Panel Oficial</span>
+          </button>
+        </div>
       </div>
     </aside>
 
-    <!-- Bottom Center Toolbar Pill -->
+    <!-- Bottom Center Toolbar Pill with Time of Day Slider -->
     <div class="bottom-toolbar glass-panel interactive">
+      <!-- Auto Rotate Toggle -->
       <button class="tool-btn active" id="btn-toggle-rotate" title="Activar/Desactivar giro continuo">
         <span class="tool-icon">🔄</span>
         <span class="label">Girar</span>
       </button>
 
-      <button class="tool-btn" id="btn-pan-mode" title="Mover / Re-centrar vista">
+      <!-- Re-Center Camera -->
+      <button class="tool-btn" id="btn-pan-mode" title="Re-centrar vista al frente">
         <span class="tool-icon">✥</span>
-        <span class="label">Mover</span>
+        <span class="label">Centrar</span>
       </button>
 
-      <button class="tool-btn" id="btn-zoom-toggle" title="Ciclo de Zoom">
+      <!-- Zoom Toggle Cycle -->
+      <button class="tool-btn" id="btn-zoom-toggle" title="Ciclo de Zoom (Ampliar/Alejar)">
         <span class="tool-icon">🔍</span>
         <span class="label">Zoom</span>
       </button>
 
-      <button class="tool-btn" id="btn-lighting-menu" title="Cambiar iluminación y atmósfera">
-        <span class="tool-icon">☀️</span>
-        <span class="label" id="light-label">Iluminación</span>
+      <div class="toolbar-sep"></div>
+
+      <!-- Time of Day Slider (Amanecer, Mediodía, Atardecer, Noche) -->
+      <div class="time-slider-group" title="Desliza para cambiar la hora del día y la luz natural">
+        <span style="font-size:12px">☀️</span>
+        <input type="range" id="time-slider-input" class="time-slider-input" min="440" max="1380" step="10" value="910">
+        <span class="time-slider-label" id="visor-hora-valor">15:10</span>
+      </div>
+
+      <div class="toolbar-sep"></div>
+
+      <!-- Open Full Archive Modal Button -->
+      <button class="tool-btn" id="btn-open-gallery-toolbar" title="Abrir la colección fotográfica oficial de 440+ fotos">
+        <span class="tool-icon">📸</span>
+        <span class="label">Fotos (440+)</span>
       </button>
 
-      <!-- Dropdown Lighting Menu -->
-      <div class="lighting-menu" id="lighting-menu">
-        <button class="light-opt-btn active" data-light="morning">🌅 Amanecer Dorado</button>
-        <button class="light-opt-btn" data-light="noon">☀️ Mediodía Radiante</button>
-        <button class="light-opt-btn" data-light="sunset">🌇 Atardecer Dramático</button>
-        <button class="light-opt-btn" data-light="night">🌙 Noche Monumental</button>
-      </div>
+      <!-- Open Official Panels Modal Button -->
+      <button class="tool-btn" id="btn-open-panels-toolbar" title="Leer los paneles informativos oficiales del Castillo y ENHER">
+        <span class="tool-icon">📜</span>
+        <span class="label">Paneles</span>
+      </button>
     </div>
 
     <!-- Bottom Right Fullscreen Button -->
@@ -182,14 +304,14 @@
   </div>
 
   <!-- ========================================================================
-       MODAL: HISTORICAL PHOTO GALLERY (440+ REAL PHOTOS DE MEQUINENZA.COM)
+       MODAL 1: HISTORICAL PHOTO GALLERY (440+ FOTOS DE MEQUINENZA.COM)
        ======================================================================== -->
   <div class="modal-backdrop" id="gallery-modal">
     <div class="modal-card">
       <div class="modal-header">
         <div>
-          <h2>Archivo Fotográfico Histórico de Mequinenza</h2>
-          <span style="font-size:12px;color:var(--text-muted)">Colección oficial del Ayuntamiento de Mequinenza (mequinenza.com) · Castillo, Poble Vell, minería y Llaüts</span>
+          <h2>Colección Fotográfica Histórica de Mequinenza</h2>
+          <span style="font-size:12px;color:var(--text-muted)">Archivo fotográfico municipal oficial (mequinenza.com) · Castillo, Poble Vell, minas, Llaüts y vecinos</span>
         </div>
         <button class="modal-close-btn" id="gallery-close-btn">✕</button>
       </div>
@@ -203,26 +325,71 @@
   </div>
 
   <!-- ========================================================================
-       MODAL: FULLSCREEN LIGHTBOX
+       MODAL 2: OFFICIAL HISTORICAL EXHIBITION PANELS (OCR TRANSCRIBED)
+       ======================================================================== -->
+  <div class="modal-backdrop" id="panels-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2>Paneles Históricos Oficiales del Castillo de Mequinenza</h2>
+          <span style="font-size:12px;color:var(--text-muted)">Transcripción íntegra y fotografías en alta resolución de los paneles oficiales de ENHER y el Castillo</span>
+        </div>
+        <button class="modal-close-btn" id="panels-close-btn">✕</button>
+      </div>
+
+      <div class="modal-content-area">
+        <div class="panels-comparison-layout">
+          <!-- Panel 1: Historia del Castillo -->
+          <div class="panel-column">
+            <h3 style="color:var(--gold);margin-top:0">🏰 Panel 1: Historia y Defensa del Castillo</h3>
+            <img src="assets/ref/paneles/panel_castillo_historico.jpeg" alt="Panel Histórico del Castillo" style="width:100%;border-radius:8px;cursor:pointer" id="panel-img-1">
+            <div style="font-size:13px;line-height:1.6;color:#d8e2ec;margin-top:12px">
+              <p><strong>1149:</strong> Reconquista de Mequinenza por Ramón Berenguer IV.</p>
+              <p><strong>1192:</strong> La villa y el castillo fueron concedidos al Comte d'Urgell, pasando a principios del siglo XIII a dominio de Ramón Guillem de Montcada, y en 1581 al Marqués de Aitona.</p>
+              <p><strong>1722:</strong> Al no haber varones en la Casa de los Montcada, el castillo pasa al heredero de la Casa Ducal de Medinaceli.</p>
+              <p><strong>1810 (Guerra de la Independencia):</strong> La fortaleza cayó en manos francesas al mando del general Suchet tras una encarnizada defensa de los 1.200 soldados que ya habían rechazado ataques en 1808 y 1809. Considerada una victoria mayor, Napoleón inscribió el nombre de <strong>MEQUINENZA</strong> en el Arco de Triunfo de París.</p>
+              <p><strong>1816:</strong> El Rey Fernando VII incorpora Mequinenza y su castillo a la Corona.</p>
+              <p><strong>1939:</strong> Tras la Guerra Civil, el castillo queda sin guarnición.</p>
+            </div>
+          </div>
+
+          <!-- Panel 2: Reconstrucción ENHER 1959 -->
+          <div class="panel-column">
+            <h3 style="color:var(--teal);margin-top:0">🏗️ Panel 2: Reconstrucción ENHER (1959)</h3>
+            <img src="assets/ref/paneles/panel_reconstruccion_enher.jpeg" alt="Panel Reconstrucción ENHER" style="width:100%;border-radius:8px;cursor:pointer" id="panel-img-2">
+            <div style="font-size:13px;line-height:1.6;color:#d8e2ec;margin-top:12px">
+              <p><strong>Ubicación:</strong> Privilegiada situación en la confluencia del Ebro con el Segre ("Octogessa" en el <em>De Bello Civili</em> de Julio César). A 185 m sobre el nivel de los ríos.</p>
+              <p><strong>Reconstrucción ENHER:</strong> Al emprender los trabajos hidráulicos en la cuenca del Ebro, se llevó a cabo una verdadera reconstrucción para residencia histórica, restaurando la gran bóveda de piedra, el salón principal con cuatro arcos góticos y el patio.</p>
+              <p><strong>Gran Ventanal:</strong> En el salón se efectuaron desniveles con el fin de acceder al ventanal desde el cual se domina la panorámica de la confluencia del río Segre con el Ebro.</p>
+              <p><strong>Medalla de Plata (1960):</strong> Otorgada el 16 de marzo de 1960 por la Asociación Española de Amigos de los Castillos por salvar de una ruina segura siete siglos de Historia.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 3: FULLSCREEN LIGHTBOX PHOTO VIEWER
        ======================================================================== -->
   <div class="lightbox-modal" id="lightbox-modal">
     <button class="lightbox-close-btn" id="lightbox-close-btn">✕</button>
     <button class="lightbox-nav-btn lightbox-prev" id="lightbox-prev-btn">◀</button>
     <button class="lightbox-nav-btn lightbox-next" id="lightbox-next-btn">▶</button>
     <div class="lightbox-content">
-      <img id="lightbox-img" src="" alt="Foto Histórica">
+      <img id="lightbox-img" src="" alt="Fotografía Histórica">
       <div id="lightbox-caption" class="lightbox-caption"></div>
     </div>
   </div>
 
   <!-- ========================================================================
-       BOOTSTRAP JAVASCRIPT LOGIC
+       BOOTSTRAP LOGIC
        ======================================================================== -->
   <script type="module">
     import { MequinenzaViewer } from './assets/js/viewer3d.js';
     import { GALLERY_CATEGORIES, GALLERY_PHOTOS } from './assets/js/gallery-data.js';
 
-    // 1. Initialize 3D Viewer
+    // 1. Inicializar motor Three.js
     let viewer = null;
     try {
       viewer = new MequinenzaViewer('viewport-container');
@@ -230,15 +397,72 @@
       console.error('Error al inicializar Three.js:', err);
     }
 
-    // 2. UI Elements Selection
+    // 2. Elementos del Dossier Lateral
     const drawer = document.getElementById('info-drawer');
     const drawerImg = document.getElementById('drawer-img');
     const drawerTitle = document.getElementById('drawer-title');
+    const drawerSubtitle = document.getElementById('drawer-subtitle');
+    const drawerEvidence = document.getElementById('drawer-evidence');
     const drawerEra = document.getElementById('drawer-era');
     const drawerAlt = document.getElementById('drawer-alt');
     const drawerDesc = document.getElementById('drawer-desc');
+    const drawerHistory = document.getElementById('drawer-history');
+    const photoStrip = document.getElementById('dossier-photo-strip');
+    const photoCountLabel = document.getElementById('dossier-photo-count');
 
-    // Sidebar navigation clicks
+    // Función para renderizar fotos reales de este lugar en el dossier
+    function updateDossierPhotoStrip(landmark) {
+      photoStrip.innerHTML = '';
+      const photos = landmark.photos || [];
+      photoCountLabel.textContent = `(${photos.length} fotos)`;
+
+      photos.forEach((src, idx) => {
+        const thumbDiv = document.createElement('div');
+        thumbDiv.className = 'dossier-photo-thumb';
+        thumbDiv.innerHTML = `<img src="${src}" alt="${landmark.title}" loading="lazy">`;
+        thumbDiv.addEventListener('click', () => {
+          openLightbox(photos.map(p => ({ src: p, title: `${landmark.title} · Foto histórica` })), idx);
+        });
+        photoStrip.appendChild(thumbDiv);
+      });
+    }
+
+    // Sincronización del landmark activo
+    window.addEventListener('landmarkSelected', (e) => {
+      const lm = e.detail;
+      drawerTitle.textContent = lm.title;
+      if (drawerSubtitle) drawerSubtitle.textContent = lm.subtitle;
+      drawerEra.textContent = lm.era;
+      drawerAlt.textContent = lm.altitude ? `Altitud: ${lm.altitude}` : 'Mequinenza';
+      drawerDesc.textContent = lm.desc;
+      drawerHistory.innerHTML = `<strong>Dato Histórico:</strong> ${lm.historyFact}`;
+      drawerImg.src = lm.thumb;
+      if (drawerEvidence && lm.evidence) {
+        drawerEvidence.textContent = `🟢 ${lm.evidence}`;
+      }
+      drawer.classList.remove('collapsed');
+
+      // Actualizar carrete de fotos reales
+      updateDossierPhotoStrip(lm);
+
+      // Actualizar botón activo en el menú lateral
+      document.querySelectorAll('.sidebar-nav .nav-item-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.place === lm.id);
+      });
+
+      // Actualizar dropdown selector de cámara
+      const panoSelect = document.getElementById('pano-view-select');
+      if (panoSelect && lm.panoKey) {
+        panoSelect.value = lm.panoKey;
+      }
+    });
+
+    // Inicializar fotos del primer landmark (overview)
+    if (viewer && viewer.landmarks.overview) {
+      updateDossierPhotoStrip(viewer.landmarks.overview);
+    }
+
+    // Clicks en la barra lateral de navegación
     document.querySelectorAll('.sidebar-nav .nav-item-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.sidebar-nav .nav-item-btn').forEach(b => b.classList.remove('active'));
@@ -248,35 +472,70 @@
       });
     });
 
-    // Synchronize landmark selection into Right Drawer
-    window.addEventListener('landmarkSelected', (e) => {
-      const lm = e.detail;
-      drawerTitle.textContent = lm.title;
-      drawerEra.textContent = lm.era;
-      drawerAlt.textContent = lm.altitude ? `Altitud: ${lm.altitude}` : 'Mequinenza';
-      drawerDesc.textContent = lm.desc;
-      drawerImg.src = lm.thumb;
-      drawer.classList.remove('collapsed');
-
-      // Update active nav button
-      document.querySelectorAll('.sidebar-nav .nav-item-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.place === lm.id);
-      });
-    });
-
-    // Drawer close
+    // Cerrar drawer
     document.getElementById('drawer-close-btn').addEventListener('click', () => {
       drawer.classList.add('collapsed');
     });
 
-    // Compass Controls
-    document.getElementById('compass-rose').addEventListener('click', () => {
-      if (viewer && viewer.controls) {
-        viewer.navigateToLandmark('overview');
+    // Selector de cámara panorámica
+    document.getElementById('pano-view-select').addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (viewer) viewer.switchPanorama(val);
+    });
+
+    // Buscador interactivo de calles y lugares
+    const searchInput = document.getElementById('visor-search-input');
+    const searchResults = document.getElementById('visor-search-results');
+
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.toLowerCase().trim();
+      if (!q) {
+        searchResults.classList.remove('open');
+        searchResults.innerHTML = '';
+        return;
+      }
+
+      searchResults.innerHTML = '';
+      let matchCount = 0;
+
+      Object.values(viewer.landmarks).forEach(lm => {
+        const text = `${lm.title} ${lm.subtitle} ${lm.desc}`.toLowerCase();
+        if (text.includes(q)) {
+          matchCount++;
+          const item = document.createElement('button');
+          item.className = 'buscador-item-btn';
+          item.innerHTML = `
+            <span class="buscador-item-title">${lm.title}</span>
+            <span class="buscador-item-subtitle">${lm.subtitle}</span>
+          `;
+          item.addEventListener('click', () => {
+            viewer.navigateToLandmark(lm.id);
+            searchResults.classList.remove('open');
+            searchInput.value = '';
+          });
+          searchResults.appendChild(item);
+        }
+      });
+
+      if (matchCount > 0) {
+        searchResults.classList.add('open');
+      } else {
+        searchResults.classList.remove('open');
       }
     });
 
-    // Zoom Controls
+    window.addEventListener('click', (e) => {
+      if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.classList.remove('open');
+      }
+    });
+
+    // Brújula y rosa de los vientos
+    document.getElementById('compass-rose').addEventListener('click', () => {
+      if (viewer) viewer.navigateToLandmark('overview');
+    });
+
+    // Zoom
     document.getElementById('zoom-in-btn').addEventListener('click', () => {
       if (viewer && viewer.camera) {
         viewer.camera.fov = Math.max(20, viewer.camera.fov - 5);
@@ -291,7 +550,7 @@
       }
     });
 
-    // Bottom Toolbar: Auto-rotate
+    // Botón de giro continuo
     const btnRotate = document.getElementById('btn-toggle-rotate');
     let autoRotate = true;
     btnRotate.addEventListener('click', () => {
@@ -300,7 +559,7 @@
       btnRotate.classList.toggle('active', autoRotate);
     });
 
-    // Bottom Toolbar: Pan / Reset Mode
+    // Botón de re-centrar
     document.getElementById('btn-pan-mode').addEventListener('click', () => {
       if (viewer && viewer.controls) {
         viewer.controls.target.set(0, 0, -1);
@@ -308,53 +567,60 @@
       }
     });
 
-    // Bottom Toolbar: Zoom Toggle Cycle
-    const zoomLevels = [46, 32, 22];
-    let zoomLevelIndex = 0;
+    // Ciclo de zoom
+    const zoomLevels = [48, 32, 22];
+    let zoomLevelIdx = 0;
     document.getElementById('btn-zoom-toggle').addEventListener('click', () => {
       if (viewer && viewer.camera) {
-        zoomLevelIndex = (zoomLevelIndex + 1) % zoomLevels.length;
-        viewer.camera.fov = zoomLevels[zoomLevelIndex];
+        zoomLevelIdx = (zoomLevelIdx + 1) % zoomLevels.length;
+        viewer.camera.fov = zoomLevels[zoomLevelIdx];
         viewer.camera.updateProjectionMatrix();
       }
     });
 
-    // Bottom-Left Interactive 3D Walk Toggle
-    const btnWalk = document.getElementById('btn-toggle-walk');
-    btnWalk.addEventListener('click', () => {
-      if (viewer) viewer.toggleStreetMode();
+    // Deslizador de hora del día
+    const timeSlider = document.getElementById('time-slider-input');
+    timeSlider.addEventListener('input', (e) => {
+      const mins = parseFloat(e.target.value);
+      if (viewer) viewer.setTimeOfDay(mins);
+    });
+
+    // Conmutador Paseo a Pie / Vista de Calles
+    document.getElementById('btn-toggle-walk').addEventListener('click', () => {
+      if (viewer) {
+        viewer.switchPanorama('poble_calle');
+        viewer.navigateToLandmark('pueblo');
+        document.getElementById('street-view-badge').style.display = 'flex';
+      }
     });
 
     document.getElementById('btn-return-aerial').addEventListener('click', () => {
-      if (viewer) viewer.exitStreetMode();
+      if (viewer) {
+        viewer.switchPanorama('real_castillo_confluencia');
+        viewer.navigateToLandmark('overview');
+        document.getElementById('street-view-badge').style.display = 'none';
+      }
     });
 
-    // Bottom Toolbar: Lighting Atmosphere Dropdown
-    const btnLighting = document.getElementById('btn-lighting-menu');
-    const lightingMenu = document.getElementById('lighting-menu');
-    const lightLabel = document.getElementById('light-label');
-
-    btnLighting.addEventListener('click', (e) => {
-      e.stopPropagation();
-      lightingMenu.classList.toggle('open');
+    // Recorrido Guiado (Plaça d'Armes a Lo Muro)
+    const btnStartTour = document.getElementById('btn-start-guided-tour');
+    btnStartTour.addEventListener('click', () => {
+      if (viewer) viewer.startTour();
     });
 
-    document.querySelectorAll('.light-opt-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.light-opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const lightMode = btn.dataset.light;
-        if (viewer) viewer.setAtmosphere(lightMode);
-        lightLabel.textContent = btn.textContent.split(' ')[1] || 'Luz';
-        lightingMenu.classList.remove('open');
-      });
+    document.getElementById('tour-stop-btn').addEventListener('click', () => {
+      if (viewer) viewer.stopTour();
     });
 
-    window.addEventListener('click', () => {
-      lightingMenu.classList.remove('open');
+    document.getElementById('tour-next-btn').addEventListener('click', () => {
+      if (viewer) viewer.tourNext();
     });
 
-    // Bottom Toolbar: Fullscreen
+    document.getElementById('tour-prev-btn').addEventListener('click', () => {
+      if (viewer) viewer.tourPrev();
+    });
+
+    // Pantalla completa
     document.getElementById('btn-fullscreen').addEventListener('click', () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
@@ -363,12 +629,13 @@
       }
     });
 
-    // Historical Gallery Modal Logic
+    // Modales: Archivo fotográfico y Paneles
     const galleryModal = document.getElementById('gallery-modal');
+    const panelsModal = document.getElementById('panels-modal');
     const galleryGrid = document.getElementById('gallery-photo-grid');
     const categoryTabsContainer = document.getElementById('gallery-category-tabs');
 
-    // Render category tabs
+    // Renderizado de pestañas de categorías
     GALLERY_CATEGORIES.forEach(cat => {
       const tab = document.createElement('button');
       tab.className = `gallery-tab-btn ${cat.id === 'all' ? 'active' : ''}`;
@@ -399,11 +666,26 @@
       });
     }
 
-    // Initial render
     renderGalleryPhotos('all');
 
-    // Open Gallery Modal from Right Drawer "Explorar ->"
-    document.getElementById('btn-drawer-explore').addEventListener('click', () => {
+    // Apertura de modales
+    document.getElementById('btn-open-photo-archive').addEventListener('click', () => {
+      galleryModal.classList.add('open');
+    });
+
+    document.getElementById('btn-open-gallery-toolbar').addEventListener('click', () => {
+      galleryModal.classList.add('open');
+    });
+
+    document.getElementById('btn-open-panels-toolbar').addEventListener('click', () => {
+      panelsModal.classList.add('open');
+    });
+
+    document.getElementById('btn-drawer-view-panel').addEventListener('click', () => {
+      panelsModal.classList.add('open');
+    });
+
+    document.getElementById('btn-drawer-explore-photos').addEventListener('click', () => {
       const activeLm = viewer ? viewer.landmarks[viewer.activeLandmarkId] : null;
       galleryModal.classList.add('open');
       if (activeLm && activeLm.category && activeLm.category !== 'all') {
@@ -420,25 +702,38 @@
       galleryModal.classList.remove('open');
     });
 
-    // Fullscreen Lightbox Photo Viewer
+    document.getElementById('panels-close-btn').addEventListener('click', () => {
+      panelsModal.classList.remove('open');
+    });
+
+    // Zoom de paneles en lightbox
+    document.getElementById('panel-img-1').addEventListener('click', () => {
+      openLightbox([{ src: 'assets/ref/paneles/panel_castillo_historico.jpeg', title: 'Panel 1: Historia y Defensas del Castillo de Mequinenza' }], 0);
+    });
+
+    document.getElementById('panel-img-2').addEventListener('click', () => {
+      openLightbox([{ src: 'assets/ref/paneles/panel_reconstruccion_enher.jpeg', title: 'Panel 2: Reconstrucción ENHER y Ubicación Fluvial' }], 0);
+    });
+
+    // Lightbox Modal Logic
     const lightbox = document.getElementById('lightbox-modal');
     const lightboxImg = document.getElementById('lightbox-img');
     const lightboxCaption = document.getElementById('lightbox-caption');
     let currentLightboxList = [];
-    let currentLightboxIndex = 0;
+    let currentLightboxIdx = 0;
 
     function openLightbox(list, index) {
       currentLightboxList = list;
-      currentLightboxIndex = index;
+      currentLightboxIdx = index;
       updateLightboxContent();
       lightbox.classList.add('open');
     }
 
     function updateLightboxContent() {
-      const item = currentLightboxList[currentLightboxIndex];
+      const item = currentLightboxList[currentLightboxIdx];
       if (!item) return;
       lightboxImg.src = item.src;
-      lightboxCaption.textContent = `${item.title} (${currentLightboxIndex + 1} de ${currentLightboxList.length})`;
+      lightboxCaption.textContent = `${item.title} (${currentLightboxIdx + 1} de ${currentLightboxList.length})`;
     }
 
     document.getElementById('lightbox-close-btn').addEventListener('click', () => {
@@ -446,12 +741,12 @@
     });
 
     document.getElementById('lightbox-prev-btn').addEventListener('click', () => {
-      currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxList.length) % currentLightboxList.length;
+      currentLightboxIdx = (currentLightboxIdx - 1 + currentLightboxList.length) % currentLightboxList.length;
       updateLightboxContent();
     });
 
     document.getElementById('lightbox-next-btn').addEventListener('click', () => {
-      currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxList.length;
+      currentLightboxIdx = (currentLightboxIdx + 1) % currentLightboxList.length;
       updateLightboxContent();
     });
 
@@ -462,8 +757,7 @@
       if (e.key === 'ArrowRight') document.getElementById('lightbox-next-btn').click();
     });
 
-    // Close modals on outside backdrop click
-    [galleryModal, lightbox].forEach(modal => {
+    [galleryModal, panelsModal, lightbox].forEach(modal => {
       modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.classList.remove('open');
       });

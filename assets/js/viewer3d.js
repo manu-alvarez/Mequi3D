@@ -1,6 +1,6 @@
 /**
- * Mequinenza 3D · Visor Histórico Fotorrealista
- * Motor 3D WebGL con Three.js, controles orbitales, gemelo digital y vistas de calle
+ * Mequinenza 3D · Visor Histórico y Gemelo Digital del Poble Vell
+ * Inspirado en la investigación de poblevell.es y la colección histórica municipal
  */
 
 import * as THREE from '../vendor/three.module.js';
@@ -27,113 +27,383 @@ export class MequinenzaViewer {
     this.textureLoader = new THREE.TextureLoader();
     this.panoTextures = {};
 
-    // Mode state: 'aerial' (default digital twin) or 'street' (cobblestone ruins)
-    this.currentMode = 'aerial';
+    // Current visual panorama key
+    this.activePanoKey = 'real_castillo_confluencia';
 
-    // Landmark Data (Mapeado exacto a la vista aérea fotorrealista)
+    // Landmark Data (Puntos históricos reales según fuentes de Mequinenza y poblevell.es)
     this.landmarks = {
       overview: {
         id: 'overview',
-        title: 'Castillo y Casco Antiguo',
-        subtitle: 'Mequinenza · Confluencia del Ebro y Segre',
-        era: 'Siglos XII - XX',
-        altitude: '148 m aprox.',
-        panoKey: 'aerial',
-        targetYaw: 0,
-        targetPitch: 0.0,
-        targetFov: 46,
-        thumb: 'assets/ref/castillo/castell3.jpg',
-        category: 'all',
-        desc: 'Recreación fotorrealista integral del Castillo medieval de Mequinenza, las ruinas del Poble Vell escalonadas en la ladera y la confluencia de los ríos Ebro y Segre ("Aiguabarreig").',
-        historyFact: 'Identificada por Julio César como "Octogesa" en su De Bello Civili, siendo enclave militar y comercial clave entre Aragón y Cataluña durante dos milenios.'
+        title: 'Panorámica de Mequinenza',
+        subtitle: 'Confluencia del Ebro y el Segre ("Aiguabarreig")',
+        era: 'Desde la Antigüedad hasta 1965',
+        altitude: '65 - 185 m s.n.m.',
+        evidence: 'Documentado',
+        evidenceSource: 'IGN 1956 · Archivo Municipal',
+        panoKey: 'real_castillo_confluencia',
+        targetYaw: 0.12,
+        targetPitch: -0.05,
+        targetFov: 48,
+        thumb: 'assets/ref/wikimedia/castillo/mequinenza_desde_castillo.jpg',
+        category: 'vistas',
+        desc: 'Fotografía panorámica histórica tomada desde lo alto del Castillo de Mequinenza dominando la confluencia de los ríos Segre y Ebro, el viaducto histórico y la ladera donde se extendía el Poble Vell.',
+        historyFact: 'Identificada por Julio César como "Octogesa" en su De Bello Civili. Durante más de dos mil años fue la llave estratégica del paso de barcas y control de los ríos entre Aragón y Cataluña.',
+        photos: [
+          'assets/ref/wikimedia/castillo/mequinenza_desde_castillo.jpg',
+          'assets/ref/generals/generals1.jpg',
+          'assets/ref/generals/generals2.jpg',
+          'assets/ref/generals/generals4.jpg',
+          'assets/ref/generals/generals11.jpg'
+        ]
       },
       castillo: {
         id: 'castillo',
-        title: 'Castillo de Mequinenza',
-        subtitle: 'Fortaleza medieval de los Moncada',
-        era: 'Siglo XII - XIII',
-        altitude: '148 m aprox.',
-        panoKey: 'aerial',
+        title: 'El Castillo de Mequinenza',
+        subtitle: 'Fortaleza medieval de los Moncada (Siglos XII - XIV)',
+        era: 'Siglos XII - XIV (Reconquista 1149)',
+        altitude: '185 m s.n.m.',
+        evidence: 'Documentado',
+        evidenceSource: 'Asociación Española de Amigos de los Castillos · ENHER 1959',
+        panoKey: 'castillo_fachada',
         targetYaw: 0.04,
-        targetPitch: 0.16,
+        targetPitch: 0.18,
         targetFov: 32,
-        pinPos: new THREE.Vector3(4, 16, -98.6),
+        pinPos: new THREE.Vector3(4, 22, -97),
         thumb: 'assets/ref/castillo/castell3.jpg',
         category: 'castillo',
-        desc: 'Fortaleza medieval construida entre los siglos XII y XIII, de la que se conservan sus murallas, torres y el recinto principal. Desde lo alto del cerro, domina la confluencia del Ebro y el Segre.',
-        historyFact: 'En 1810 resistió el asedio de las tropas napoleónicas del Mariscal Suchet; la hazaña quedó grabada con el nombre de Mequinenza en el Arco de Triunfo de París.'
+        desc: 'Fortaleza medieval erigida sobre el farallón rocoso calizo tras la reconquista de Ramón Berenguer IV en 1149. Conserva sus cuatro torres (Homenaje, Confluencia, Armas y Portal), el patio de armas con arcos góticos y el salón con vistas a la confluencia.',
+        historyFact: 'En 1810, durante la Guerra de la Independencia, 1.200 defensores resistieron el asedio del General francés Suchet. Su resistencia fue tan admirada por Napoleón que hizo grabar el nombre de Mequinenza en el Arco de Triunfo de París.',
+        photos: [
+          'assets/ref/castillo/castell1.jpg',
+          'assets/ref/castillo/castell2.jpg',
+          'assets/ref/castillo/castell3.jpg',
+          'assets/ref/castillo/castell4.jpg',
+          'assets/ref/wikimedia/castillo/castillo_zm.jpg',
+          'assets/ref/wikimedia/castillo/castillo_vista_general.jpg'
+        ]
       },
-      poble: {
-        id: 'poble',
-        title: 'Casco antiguo',
-        subtitle: 'Poble Vell · Ruinas y arquitectura tradicional',
-        era: 'Medieval - siglo XX',
-        altitude: '95 m aprox.',
-        panoKey: 'aerial',
-        targetYaw: -0.24,
+      pueblo: {
+        id: 'pueblo',
+        title: 'Poble Vell (Casco Antiguo)',
+        subtitle: 'El pueblo que fue desalojado por el embalse de Riba-roja',
+        era: 'Trama medieval - Derribo 1970',
+        altitude: '80 - 130 m',
+        evidence: 'Documentado',
+        evidenceSource: 'Vuelo americano IGN 1956 · Centro de Estudios Jesús Moncada',
+        panoKey: 'poble_calle',
+        targetYaw: -0.32,
         targetPitch: -0.08,
-        targetFov: 33,
-        pinPos: new THREE.Vector3(-24, -8, -96.7),
+        targetFov: 36,
+        pinPos: new THREE.Vector3(-32, -6, -94),
         thumb: 'assets/ref/pueblo/poble1.jpg',
         category: 'pueblo',
-        desc: 'Conjunto urbano escalonado de casas de piedra caliza, callejones empedrados y arcos tradicionales situado en la falda del monte, desalojado en los años 60 por la construcción del embalse de Riba-roja.',
-        historyFact: 'Cuna del célebre novelista Jesús Moncada, quien inmortalizó su vida, barqueros y mineros en su obra cumbre "Camí de sirga".'
+        desc: 'El núcleo urbano tradicional de casas de piedra caliza, callejones empinados ("carrerons"), balcones de hierro forjado y porches, escalonado sobre la colina entre el castillo y el río Ebro antes de ser sumergido.',
+        historyFact: 'Cuna del escritor Jesús Moncada, quien inmortalizó a sus barqueros, sirgadores, mineros y la vida del pueblo viejo en su obra cumbre de la literatura contemporánea "Camí de sirga".',
+        photos: [
+          'assets/ref/pueblo/poble1.jpg',
+          'assets/ref/pueblo/poble2.jpg',
+          'assets/ref/pueblo/poble3.jpg',
+          'assets/ref/pueblo/poble4.jpg',
+          'assets/ref/pueblo/poble5.jpg',
+          'assets/ref/pueblo/poble6.jpg',
+          'assets/ref/pueblo/poble7.jpg'
+        ]
       },
-      ebro: {
-        id: 'ebro',
-        title: 'Río Ebro',
-        subtitle: 'Gran vía fluvial y ruta de los Llaüts',
-        era: 'Vía fluvial milenaria',
-        altitude: '65 m aprox.',
-        panoKey: 'aerial',
-        targetYaw: 0.48,
-        targetPitch: 0.04,
-        targetFov: 34,
-        pinPos: new THREE.Vector3(46, 6, -88.6),
-        thumb: 'assets/ref/llauts/llauts1.jpg',
-        category: 'llauts',
-        desc: 'Corredor fluvial navegable por donde transitaban los tradicionales "llaüts", embarcaciones de madera que transportaban el carbón de las minas mequinenzanas hacia Tortosa y el Mediterráneo.',
-        historyFact: 'Los sirgadores remontaban los barcos a contracorriente con sogas desde las orillas del río en durísimas jornadas.'
+      placa_armes: {
+        id: 'placa_armes',
+        title: 'Plaça d\'Armes (Plaza de Armas)',
+        subtitle: 'El epicentro social del Poble Vell',
+        era: 'Siglos XIX - XX',
+        altitude: '92 m',
+        evidence: 'Documentado',
+        evidenceSource: 'Fototeca Municipal · Foto MUNI_plaza_512',
+        panoKey: 'poble_calle',
+        targetYaw: -0.22,
+        targetPitch: -0.05,
+        targetFov: 32,
+        pinPos: new THREE.Vector3(-22, -4, -96),
+        thumb: 'assets/ref/pueblo/poble1.jpg',
+        category: 'pueblo',
+        desc: 'La plaza central donde se encontraban el Bar Sport, bancos de madera, caserones señoriales con portales de arco de piedra y desde donde se divisaba la cúpula y el campanario de la iglesia.',
+        historyFact: 'Lugar de tertulias de mineros y barqueros, bailes populares y pregones. El caserón del portal de arco tenía una planta de 277 m² y 3 alturas con tejado a cuatro aguas.',
+        photos: [
+          'assets/ref/pueblo/poble1.jpg',
+          'assets/ref/pueblo/poble12.jpg',
+          'assets/ref/pueblo/poble20.jpg',
+          'assets/ref/pueblo/poble26.jpg',
+          'assets/ref/festes/festes1.jpg'
+        ]
       },
-      segre: {
-        id: 'segre',
-        title: 'Río Segre',
-        subtitle: 'Confluencia fluvial ("Aiguabarreig")',
-        era: 'Paraje natural e histórico',
-        altitude: '65 m aprox.',
-        panoKey: 'aerial',
-        targetYaw: 0.52,
-        targetPitch: -0.18,
+      esglesia: {
+        id: 'esglesia',
+        title: 'Placeta Missa y l\'Església',
+        subtitle: 'Iglesia Parroquial de Nuestra Señora de la Asunción',
+        era: 'Siglos XVI - XVIII',
+        altitude: '105 m',
+        evidence: 'Documentado',
+        evidenceSource: 'Archivo Parroquial · 39 fotografías catalogadas',
+        panoKey: 'poble_calle',
+        targetYaw: -0.16,
+        targetPitch: 0.08,
+        targetFov: 32,
+        pinPos: new THREE.Vector3(-14, 6, -98),
+        thumb: 'assets/ref/esglesia/esglesia1.jpg',
+        category: 'esglesia',
+        desc: 'Templo parroquial de sillería de piedra caliza con torre campanario cuadrada dominando la placeta, gran nave central, coro alto y capillas de cofradías de barqueros y mineros.',
+        historyFact: 'Escenario de intensos combates durante la Guerra Civil en la Batalla del Ebro de 1938. Sus campanas marcaban el ritmo de las salidas de los Llaüts y turnos de las minas.',
+        photos: [
+          'assets/ref/esglesia/esglesia1.jpg',
+          'assets/ref/esglesia/esglesia2.jpg',
+          'assets/ref/esglesia/esglesia3.jpg',
+          'assets/ref/esglesia/esglesia4.jpg',
+          'assets/ref/esglesia/esglesia15.jpg',
+          'assets/ref/esglesia/esglesia20.jpg'
+        ]
+      },
+      carrer_major: {
+        id: 'carrer_major',
+        title: 'Carrer Major (Calle Mayor)',
+        subtitle: 'La arteria comercial y residencial principal',
+        era: 'Siglos XVIII - XX',
+        altitude: '90 m',
+        evidence: 'Documentado',
+        evidenceSource: 'Plano Parcelario ENHER · 13 casas catalogadas',
+        panoKey: 'poble_calle',
+        targetYaw: -0.38,
+        targetPitch: -0.04,
+        targetFov: 33,
+        pinPos: new THREE.Vector3(-38, -5, -92),
+        thumb: 'assets/ref/pueblo/poble2.jpg',
+        category: 'pueblo',
+        desc: 'Calle empedrada flanqueada por comercios, ultramarinos, barberías y talleres artesanales que comunicaba el corazón del pueblo con el camino hacia la comarca del Segre.',
+        historyFact: 'Por ella discurrían las procesiones de Santa Agatoclia y el bullicio de los días de mercado con carros cargados de productos de la huerta del Ebro.',
+        photos: [
+          'assets/ref/pueblo/poble2.jpg',
+          'assets/ref/pueblo/poble7.jpg',
+          'assets/ref/pueblo/poble13.jpg',
+          'assets/ref/pueblo/poble17.jpg',
+          'assets/ref/pueblo/poble28.jpg'
+        ]
+      },
+      ca_la_vila: {
+        id: 'ca_la_vila',
+        title: 'Plaça de Ca la Vila (Ayuntamiento)',
+        subtitle: 'Antigua Casa Consistorial y sede municipal',
+        era: 'Siglo XIX - 1965',
+        altitude: '85 m',
+        evidence: 'Documentado',
+        evidenceSource: 'Archivo Histórico de Mequinenza · 14 fotografías',
+        panoKey: 'poble_calle',
+        targetYaw: -0.28,
+        targetPitch: -0.14,
+        targetFov: 32,
+        pinPos: new THREE.Vector3(-28, -14, -94),
+        thumb: 'assets/ref/ajuntament/ajuntament1.jpg',
+        category: 'ajuntament',
+        desc: 'Edificio consistorial de piedra con balconada oficial, reloj y salón de plenos donde se gestionaba la vida política, las licencias de sirga, las minas y la vida comunitaria.',
+        historyFact: 'En sus dependencias se guardaron los libros de actas y los padrones que sirvieron para organizar el traslado ordenado de la población hacia el "Pueblo Nuevo".',
+        photos: [
+          'assets/ref/ajuntament/ajuntament1.jpg',
+          'assets/ref/ajuntament/ajuntament2.jpg',
+          'assets/ref/ajuntament/ajuntament5.jpg',
+          'assets/ref/ajuntament/ajuntament7.jpg',
+          'assets/ref/ajuntament/ajuntament9.jpg'
+        ]
+      },
+      carrer_saragossa: {
+        id: 'carrer_saragossa',
+        title: 'Carrer Saragossa (Calle Zaragoza)',
+        subtitle: 'Calle histórica residencial con 53 casas',
+        era: 'Siglos XIX - XX',
+        altitude: '95 m',
+        evidence: 'Documentado',
+        evidenceSource: 'Plano Parcelario y Padrón de 1965 (53 casas)',
+        panoKey: 'poble_calle',
+        targetYaw: -0.44,
+        targetPitch: -0.06,
         targetFov: 34,
-        pinPos: new THREE.Vector3(50, -18, -84.6),
+        pinPos: new THREE.Vector3(-44, -7, -89),
+        thumb: 'assets/ref/pueblo/poble3.jpg',
+        category: 'pueblo',
+        desc: 'Una de las calles más pobladas del casco histórico, con 53 casas alineadas en pendiente. Sus portales de medio punto y bodegas de piedra albergaban a numerosas familias mineras.',
+        historyFact: 'Esta calle concentraba talleres de carpintería de ribera, almacenes de aperos y varias tabernas frecuentadas por los sirgadores que trabajaban en el río.',
+        photos: [
+          'assets/ref/pueblo/poble3.jpg',
+          'assets/ref/pueblo/poble8.jpg',
+          'assets/ref/pueblo/poble14.jpg',
+          'assets/ref/pueblo/poble22.jpg',
+          'assets/ref/pueblo/poble30.jpg'
+        ]
+      },
+      lo_muro: {
+        id: 'lo_muro',
+        title: 'Lo Muro (El Muro)',
+        subtitle: 'El paseo y pretil de sillería sobre el río Ebro',
+        era: 'Siglos XIX - XX',
+        altitude: '68 m',
+        evidence: 'Documentado',
+        evidenceSource: 'Planos de Obra Fluvial · Fototeca Municipal',
+        panoKey: 'real_castillo_confluencia',
+        targetYaw: 0.28,
+        targetPitch: -0.16,
+        targetFov: 32,
+        pinPos: new THREE.Vector3(26, -16, -95),
         thumb: 'assets/ref/generals/generals1.jpg',
         category: 'generals',
-        desc: 'Punto de unión donde el río Segre (tras recibir las aguas del Cinca) entrega su caudal al Ebro, formando una de las reservas fluviales y ecológicas más ricas de Europa.',
-        historyFact: 'Límite histórico natural y paso de barcas estratégico, escenario clave en la Batalla del Ebro de 1938.'
+        desc: 'Monumento y paseo singular de Mequinenza: pretil de dos hiladas de grandes bloques de piedra labrada, albardilla y repisa hacia el agua, que protegía el pueblo de las crecidas del Ebro.',
+        historyFact: 'Lugar de recreo ineludible donde los mequinenzanos paseaban al atardecer observando el tráfico de barcazas de carbón y las maniobras de amarre.',
+        photos: [
+          'assets/ref/generals/generals1.jpg',
+          'assets/ref/generals/generals3.jpg',
+          'assets/ref/llauts/llauts1.jpg',
+          'assets/ref/llauts/llauts2.jpg'
+        ]
       },
-      poi: {
-        id: 'poi',
-        title: 'Puntos de interés',
-        subtitle: 'Patrimonio histórico, minero y cultural',
-        era: 'Siglos XII - XX',
-        altitude: '65 - 185 m',
-        panoKey: 'aerial',
-        targetYaw: 0,
-        targetPitch: 0.0,
-        targetFov: 46,
+      llauts: {
+        id: 'llauts',
+        title: 'Río Ebro & Los Llaüts',
+        subtitle: 'El transporte fluvial del carbón y los sirgadors',
+        era: 'Siglos XVIII - mediados siglo XX',
+        altitude: '65 m s.n.m.',
+        evidence: 'Documentado',
+        evidenceSource: '11 fotografías históricas oficiales de Llaüts',
+        panoKey: 'real_castillo_confluencia',
+        targetYaw: 0.46,
+        targetPitch: 0.02,
+        targetFov: 34,
+        pinPos: new THREE.Vector3(44, 4, -89),
+        thumb: 'assets/ref/llauts/llauts1.jpg',
+        category: 'llauts',
+        desc: 'Las emblemáticas embarcaciones tradicionales de madera de Mequinenza, de hasta 30 metros de eslora y 30 toneladas de carga, que transportaban el carbón río abajo hacia el Mediterráneo.',
+        historyFact: 'El regreso a contracorriente se realizaba a pie remolcando el barco con maromas desde la orilla: el camino de sirga ("camí de sirga"), hazaña heroica de los barqueros mequinenzanos.',
+        photos: [
+          'assets/ref/llauts/llauts1.jpg',
+          'assets/ref/llauts/llauts2.jpg',
+          'assets/ref/llauts/llauts3.jpg',
+          'assets/ref/llauts/llauts4.jpg',
+          'assets/ref/llauts/llauts5.jpg'
+        ]
+      },
+      pont_segre: {
+        id: 'pont_segre',
+        title: 'Pont de Segre & Confluencia',
+        subtitle: 'Unión del Segre y el Ebro ("Aiguabarreig")',
+        era: 'Siglo XIX - XX',
+        altitude: '65 m',
+        evidence: 'Documentado',
+        evidenceSource: 'Planos de Obras Públicas e IGN',
+        panoKey: 'real_castillo_confluencia',
+        targetYaw: 0.54,
+        targetPitch: -0.14,
+        targetFov: 32,
+        pinPos: new THREE.Vector3(52, -14, -84),
+        thumb: 'assets/ref/generals/generals4.jpg',
+        category: 'generals',
+        desc: 'Viaducto de arcos de piedra y tramos metálicos que cruzaba el curso del río Segre en su desembocadura al Ebro, conectando la villa con Lérida y el ferrocarril.',
+        historyFact: 'Dinamitado durante los combates de la Batalla del Ebro en 1938 para frenar el avance bélico y reconstruido posteriormente por su vital importancia logística.',
+        photos: [
+          'assets/ref/generals/generals4.jpg',
+          'assets/ref/generals/generals11.jpg',
+          'assets/ref/generals/generals18.jpg',
+          'assets/ref/generals/generals25.jpg'
+        ]
+      },
+      colegio: {
+        id: 'colegio',
+        title: 'Grupo Escolar María Quintana',
+        subtitle: 'El edificio histórico que sobrevivió a la inundación',
+        era: 'Inaugurado en 1927 · En pie hoy',
+        altitude: '78 m',
+        evidence: 'Documentado',
+        evidenceSource: 'Museos de Mequinenza · Arquitectura de Manuel de Goytia',
+        panoKey: 'real_castillo_confluencia',
+        targetYaw: 0.18,
+        targetPitch: -0.22,
+        targetFov: 32,
+        pinPos: new THREE.Vector3(18, -22, -94),
+        thumb: 'assets/ref/elements/elements1.jpg',
+        category: 'elements',
+        desc: 'Magnífico edificio escolar de estilo novecentista aragonés promovido por la benefactora mequinenzana María Quintana. Por su cota de altura, se salvó del nivel de las aguas del embalse.',
+        historyFact: 'Hoy alberga los prestigiosos Museos de Mequinenza (Museo de la Mina, Museo de la Historia y Museo del Pasado Prehistórico).',
+        photos: [
+          'assets/ref/elements/elements1.jpg',
+          'assets/ref/elements/elements2.jpg',
+          'assets/ref/pueblo/poble10.jpg',
+          'assets/ref/competicions/competicions1.jpg'
+        ]
+      },
+      mina: {
+        id: 'mina',
+        title: 'Cuenca Minera de Lignito',
+        subtitle: 'Pozos, galerías subterráneas y planos inclinados',
+        era: 'Siglos XIX - XX',
+        altitude: '90 - 200 m',
+        evidence: 'Documentado',
+        evidenceSource: '12 fotografías históricas de la colección municipal',
+        panoKey: 'real_castillo_confluencia',
+        targetYaw: -0.52,
+        targetPitch: 0.12,
+        targetFov: 34,
+        pinPos: new THREE.Vector3(-52, 12, -84),
+        thumb: 'assets/ref/mina/mina1.jpg',
+        category: 'mina',
+        desc: 'La cuenca carbonífera de Mequinenza fue el mayor motor económico comarcal. Las explotaciones mineras perforaban las capas de lignito de los montes para alimentar barcos y centrales.',
+        historyFact: 'Las vagonetas transportaban el carbón por planos inclinados hasta los cargaderos del Ebro, dando trabajo a más de mil mineros mequinenzanos y foráneos.',
+        photos: [
+          'assets/ref/mina/mina1.jpg',
+          'assets/ref/mina/mina2.jpg',
+          'assets/ref/mina/mina3.jpg',
+          'assets/ref/mina/mina4.jpg',
+          'assets/ref/mina/mina5.jpg'
+        ]
+      },
+      paneles: {
+        id: 'paneles',
+        title: 'Paneles Informativos Oficiales',
+        subtitle: 'Reconstrucción ENHER (1959) e Historia del Castillo',
+        era: '1959 - Actualidad',
+        altitude: '185 m',
+        evidence: 'Documentado',
+        evidenceSource: 'Paneles físicos originales del Castillo de Mequinenza',
+        panoKey: 'castillo_fachada',
+        targetYaw: 0.14,
+        targetPitch: 0.15,
+        targetFov: 30,
+        pinPos: new THREE.Vector3(14, 15, -98),
         thumb: 'assets/ref/paneles/panel_castillo_historico.jpeg',
-        category: 'all',
-        desc: 'Colección de monumentos y vestigios singulares: Iglesia de la Asunción, las minas de lignito, los antiguos puentes y los paneles conmemorativos del Poble Vell.',
-        historyFact: 'El museo histórico municipal atesora paneles y fotografías originales que documentan la vida del pueblo antes de la inundación.'
+        category: 'paneles',
+        desc: 'Los dos paneles físicos que conservan la historia fidedigna del castillo: el asedio napoleónico de 1810, los siete siglos de historia y la monumental reconstrucción realizada por ENHER en 1959.',
+        historyFact: 'Por salvar el monumento de una ruina segura, la Asociación Española de Amigos de los Castillos concedió el 16 de marzo de 1960 su Medalla de Plata a la empresa reconstructora.',
+        photos: [
+          'assets/ref/paneles/panel_castillo_historico.jpeg',
+          'assets/ref/paneles/panel_reconstruccion_enher.jpeg',
+          'assets/ref/enderroc/enderroc1.jpg',
+          'assets/ref/enderroc/enderroc2.jpg'
+        ]
       }
     };
 
+    // Paradas del Recorrido Guiado ("De la Plaça d'Armes a Lo Muro" como en poblevell.es)
+    this.tourKeys = [
+      'placa_armes',
+      'esglesia',
+      'carrer_major',
+      'ca_la_vila',
+      'carrer_saragossa',
+      'lo_muro',
+      'castillo'
+    ];
+
     this.activeLandmarkId = 'overview';
-    this.activePanoKey = 'aerial';
     this.pinElements = new Map();
 
-    // Atmosphere
-    this.currentAtmosphere = 'morning';
+    // Tour state
+    this.tourActive = false;
+    this.tourStepIndex = 0;
+    this.tourTimer = 0;
+
+    // Time of day (minutos: 440 = 07:20 amanecer, 910 = 15:10 mediodía, 1260 = 21:00 atardecer, 1380 = 23:00 noche)
+    this.timeMinutes = 910;
 
     this.init();
   }
@@ -161,7 +431,7 @@ export class MequinenzaViewer {
   setupCamera() {
     const w = this.container.clientWidth || window.innerWidth;
     const h = this.container.clientHeight || window.innerHeight;
-    this.camera = new THREE.PerspectiveCamera(46, w / h, 0.1, 1000);
+    this.camera = new THREE.PerspectiveCamera(48, w / h, 0.1, 1000);
     this.camera.position.set(0, 0, 0.1);
   }
 
@@ -176,7 +446,7 @@ export class MequinenzaViewer {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.12;
+    this.renderer.toneMappingExposure = 1.15;
     this.container.appendChild(this.renderer.domElement);
   }
 
@@ -186,15 +456,14 @@ export class MequinenzaViewer {
     this.controls.enablePan = false;
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.055;
-    this.controls.rotateSpeed = -0.35; // Inverted for natural intuitive panorama look-around
+    this.controls.rotateSpeed = -0.35; // Natural look-around
     this.controls.minDistance = 0.01;
     this.controls.maxDistance = 1.0;
     this.controls.autoRotate = true;
-    this.controls.autoRotateSpeed = 0.25;
+    this.controls.autoRotateSpeed = 0.22;
 
-    // Constrain vertical polar angle so horizon feels solid
-    this.controls.minPolarAngle = Math.PI * 0.28;
-    this.controls.maxPolarAngle = Math.PI * 0.72;
+    this.controls.minPolarAngle = Math.PI * 0.25;
+    this.controls.maxPolarAngle = Math.PI * 0.75;
   }
 
   setupLighting() {
@@ -207,29 +476,43 @@ export class MequinenzaViewer {
   }
 
   /* ========================================================================
-     PANORAMIC ENVIRONMENT (Photorealistic Sphere Projection)
+     PANORAMIC ENVIRONMENT (Real Historical Projections)
      ======================================================================== */
   loadPanoramas() {
-    // 1. Aerial Digital Twin (Vista General Aérea)
-    const texAerial = this.textureLoader.load('assets/mequinenza_aerea_panoramica.jpg');
-    texAerial.colorSpace = THREE.SRGBColorSpace;
-    texAerial.wrapS = THREE.ClampToEdgeWrapping;
-    texAerial.wrapT = THREE.ClampToEdgeWrapping;
-    this.panoTextures.aerial = texAerial;
+    // 1. Panorámica Real tomada desde el Castillo (4288x3216)
+    const texConfluencia = this.textureLoader.load('assets/ref/wikimedia/castillo/mequinenza_desde_castillo.jpg');
+    texConfluencia.colorSpace = THREE.SRGBColorSpace;
+    texConfluencia.wrapS = THREE.ClampToEdgeWrapping;
+    texConfluencia.wrapT = THREE.ClampToEdgeWrapping;
+    this.panoTextures.real_castillo_confluencia = texConfluencia;
 
-    // 2. Street-Level Poble Vell Ruins & Cobblestones
-    const texStreet = this.textureLoader.load('assets/poble_vell_fotorrealista.jpg');
-    texStreet.colorSpace = THREE.SRGBColorSpace;
-    texStreet.wrapS = THREE.ClampToEdgeWrapping;
-    texStreet.wrapT = THREE.ClampToEdgeWrapping;
-    this.panoTextures.street = texStreet;
+    // 2. Castillo Fachada y Murallas (5449x3150)
+    const texCastillo = this.textureLoader.load('assets/ref/wikimedia/castillo/castillo_zm.jpg');
+    texCastillo.colorSpace = THREE.SRGBColorSpace;
+    texCastillo.wrapS = THREE.ClampToEdgeWrapping;
+    texCastillo.wrapT = THREE.ClampToEdgeWrapping;
+    this.panoTextures.castillo_fachada = texCastillo;
 
-    // Curved panoramic cylindrical sphere for immersive distortion-free visualization
+    // 3. Poble Vell a pie de calle (ruinas de piedra y empedrado)
+    const texCalle = this.textureLoader.load('assets/poble_vell_fotorrealista.jpg');
+    texCalle.colorSpace = THREE.SRGBColorSpace;
+    texCalle.wrapS = THREE.ClampToEdgeWrapping;
+    texCalle.wrapT = THREE.ClampToEdgeWrapping;
+    this.panoTextures.poble_calle = texCalle;
+
+    // 4. Gemelo digital aéreo
+    const texDigital = this.textureLoader.load('assets/mequinenza_aerea_panoramica.jpg');
+    texDigital.colorSpace = THREE.SRGBColorSpace;
+    texDigital.wrapS = THREE.ClampToEdgeWrapping;
+    texDigital.wrapT = THREE.ClampToEdgeWrapping;
+    this.panoTextures.gemelo_digital = texDigital;
+
+    // Sphere geometry (inverted for internal viewing)
     const sphereGeo = new THREE.SphereGeometry(100, 64, 40);
-    sphereGeo.scale(-1, 1, 1); // Invert faces so texture is viewed from inside
+    sphereGeo.scale(-1, 1, 1);
 
     this.panoMaterial = new THREE.MeshBasicMaterial({
-      map: texAerial,
+      map: texConfluencia,
       toneMapped: true
     });
 
@@ -246,10 +529,9 @@ export class MequinenzaViewer {
   }
 
   /* ========================================================================
-     ATMOSPHERIC EFFECTS (Particles, Sunbeams, Birds)
+     ATMOSPHERIC EFFECTS (Particles, Birds)
      ======================================================================== */
   createAtmosphereEffects() {
-    // 1. Shimmering dust motes floating in golden sunlight
     const particleCount = 180;
     const particleGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
@@ -272,7 +554,6 @@ export class MequinenzaViewer {
     this.particleSystem = new THREE.Points(particleGeo, particleMat);
     this.scene.add(this.particleSystem);
 
-    // 2. Birds soaring over the cliff
     this.scene.add(this.birdsGroup);
     const birdGeo = new THREE.BufferGeometry();
     const birdVerts = new Float32Array([
@@ -287,7 +568,7 @@ export class MequinenzaViewer {
       bird.userData = {
         radius: 40 + Math.random() * 25,
         angle: (i / 8) * Math.PI * 2,
-        height: 10 + Math.random() * 12,
+        height: 12 + Math.random() * 12,
         speed: 0.18 + Math.random() * 0.12,
         phase: Math.random() * Math.PI * 2
       };
@@ -297,47 +578,53 @@ export class MequinenzaViewer {
   }
 
   /* ========================================================================
-     ATMOSPHERE LIGHTING PRESETS
+     TIME OF DAY LIGHTING (Inspirado en el deslizador de poblevell.es)
      ======================================================================== */
-  setAtmosphere(mode) {
-    this.currentAtmosphere = mode;
-    switch (mode) {
-      case 'morning': // Golden Hour
-        this.renderer.toneMappingExposure = 1.15;
-        this.ambientLight.color.set(0xfff3e0);
-        this.sunLight.color.set(0xffdfae);
-        this.sunLight.intensity = 1.8;
-        if (this.particleSystem) this.particleSystem.material.color.set(0xffe8ba);
-        break;
+  setTimeOfDay(minutes) {
+    this.timeMinutes = minutes;
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.floor(minutes % 60);
+    const timeString = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 
-      case 'noon': // Crisp Mediterranean Daylight
-        this.renderer.toneMappingExposure = 1.05;
-        this.ambientLight.color.set(0xf0f7ff);
-        this.sunLight.color.set(0xffffff);
-        this.sunLight.intensity = 2.1;
-        if (this.particleSystem) this.particleSystem.material.color.set(0xeaf4ff);
-        break;
+    const labelOutput = document.getElementById('visor-hora-valor');
+    if (labelOutput) labelOutput.textContent = timeString;
 
-      case 'sunset': // Dramatic Crimson Twilight
-        this.renderer.toneMappingExposure = 1.25;
-        this.ambientLight.color.set(0xffa175);
-        this.sunLight.color.set(0xff6a3d);
-        this.sunLight.intensity = 1.9;
-        if (this.particleSystem) this.particleSystem.material.color.set(0xffad7a);
-        break;
-
-      case 'night': // Monumental Starry Night
-        this.renderer.toneMappingExposure = 0.85;
-        this.ambientLight.color.set(0x354d68);
-        this.sunLight.color.set(0x6b9cd1);
-        this.sunLight.intensity = 0.7;
-        if (this.particleSystem) this.particleSystem.material.color.set(0x8cb6e8);
-        break;
+    // Calcular factor de luz según la hora
+    if (minutes < 480) {
+      // Noche / Madrugada (antes de las 08:00)
+      this.renderer.toneMappingExposure = 0.85;
+      this.ambientLight.color.set(0x32475e);
+      this.sunLight.color.set(0x5a88ba);
+      this.sunLight.intensity = 0.6;
+    } else if (minutes < 660) {
+      // Amanecer / Mañana temprana (08:00 - 11:00)
+      this.renderer.toneMappingExposure = 1.15;
+      this.ambientLight.color.set(0xfff0dd);
+      this.sunLight.color.set(0xffd59e);
+      this.sunLight.intensity = 1.9;
+    } else if (minutes < 1140) {
+      // Mediodía radiante (11:00 - 19:00)
+      this.renderer.toneMappingExposure = 1.08;
+      this.ambientLight.color.set(0xf3f8ff);
+      this.sunLight.color.set(0xffffff);
+      this.sunLight.intensity = 2.1;
+    } else if (minutes < 1290) {
+      // Atardecer dorado / crepúsculo (19:00 - 21:30)
+      this.renderer.toneMappingExposure = 1.25;
+      this.ambientLight.color.set(0xffa175);
+      this.sunLight.color.set(0xff6a3d);
+      this.sunLight.intensity = 1.9;
+    } else {
+      // Noche cerrada (21:30 en adelante)
+      this.renderer.toneMappingExposure = 0.82;
+      this.ambientLight.color.set(0x283a4f);
+      this.sunLight.color.set(0x4a74a3);
+      this.sunLight.intensity = 0.5;
     }
   }
 
   /* ========================================================================
-     INTERACTIVE 3D SCREEN-SPACE PINS (Matching Design Mockup)
+     INTERACTIVE 3D SCREEN-SPACE PINS (Puntos históricos reales)
      ======================================================================== */
   createScreenPins() {
     const pinContainer = document.getElementById('map-pins-layer');
@@ -351,11 +638,14 @@ export class MequinenzaViewer {
       pin.className = 'map-pin interactive';
       pin.dataset.id = landmark.id;
 
-      // Icon matching mockup: Castle, House, Water
       let icon = '📍';
       if (landmark.id === 'castillo') icon = '🏰';
-      else if (landmark.id === 'poble') icon = '🏠';
-      else if (landmark.id === 'ebro' || landmark.id === 'segre') icon = '〰️';
+      else if (landmark.id === 'esglesia') icon = '⛪';
+      else if (landmark.id === 'placa_armes' || landmark.id === 'pueblo' || landmark.id === 'carrer_major' || landmark.id === 'ca_la_vila') icon = '🏛️';
+      else if (landmark.id === 'lo_muro' || landmark.id === 'llauts' || landmark.id === 'pont_segre') icon = '⛵';
+      else if (landmark.id === 'mina') icon = '⛏️';
+      else if (landmark.id === 'colegio') icon = '🏫';
+      else if (landmark.id === 'paneles') icon = '📜';
 
       pin.innerHTML = `
         <span class="pin-icon">${icon}</span>
@@ -376,14 +666,6 @@ export class MequinenzaViewer {
   }
 
   updateScreenPins() {
-    if (this.currentMode === 'street') {
-      // In street mode, pins are hidden
-      this.pinElements.forEach(({ element }) => {
-        element.style.display = 'none';
-      });
-      return;
-    }
-
     const tempV = new THREE.Vector3();
     const w = this.container.clientWidth || window.innerWidth;
     const h = this.container.clientHeight || window.innerHeight;
@@ -394,7 +676,7 @@ export class MequinenzaViewer {
       tempV.copy(worldPos);
       tempV.project(this.camera);
 
-      // In front of camera check
+      // Check if behind camera
       if (tempV.z < -1.0 || tempV.z > 1.0) {
         element.style.display = 'none';
         return;
@@ -403,7 +685,6 @@ export class MequinenzaViewer {
       const x = (tempV.x * widthHalf) + widthHalf;
       const y = -(tempV.y * heightHalf) + heightHalf;
 
-      // Screen boundary check
       if (x < 10 || x > w - 10 || y < 10 || y > h - 10) {
         element.style.display = 'none';
         return;
@@ -426,12 +707,11 @@ export class MequinenzaViewer {
     this.activeLandmarkId = id;
     this.controls.autoRotate = false;
 
-    // If we were in street mode and user clicks another landmark, return to aerial
-    if (this.currentMode === 'street' && id !== 'poble') {
-      this.exitStreetMode();
+    // Cambiar textura panorámica si corresponde
+    if (lm.panoKey && lm.panoKey !== this.activePanoKey) {
+      this.switchPanorama(lm.panoKey);
     }
 
-    // Smoothly rotate camera to target yaw & pitch
     if (lm.targetYaw !== undefined && lm.targetPitch !== undefined) {
       const targetDir = new THREE.Vector3(
         Math.sin(lm.targetYaw) * Math.cos(lm.targetPitch),
@@ -446,60 +726,58 @@ export class MequinenzaViewer {
       }
     }
 
-    // Dispatch event to synchronize Right Drawer UI
+    // Disparar evento para actualizar el Dossier y el carrete de fotos reales
     window.dispatchEvent(new CustomEvent('landmarkSelected', { detail: lm }));
   }
 
   /* ========================================================================
-     STREET-LEVEL MODE (Recreación fotorrealista calles Poble Vell)
+     RECORRIDOS GUIADOS (Paseo con paradas de poblevell.es)
      ======================================================================== */
-  enterStreetMode() {
-    this.currentMode = 'street';
-    this.controls.autoRotate = false;
-    this.camera.fov = 50;
-    this.camera.updateProjectionMatrix();
+  startTour() {
+    this.tourActive = true;
+    this.tourStepIndex = 0;
+    this.tourTimer = 0;
+    this.navigateToLandmark(this.tourKeys[0]);
 
-    // Switch to street panorama
-    this.switchPanorama('street');
-
-    // Aim forward looking down the cobblestone alley towards the castle
-    this.controls.target.set(0, 0.05, -1);
-    this.controls.update();
-
-    const badge = document.getElementById('street-view-badge');
-    if (badge) badge.style.display = 'flex';
-
-    const btnWalk = document.getElementById('btn-toggle-walk');
-    if (btnWalk) btnWalk.classList.add('active');
+    const banner = document.getElementById('tour-hud-banner');
+    if (banner) banner.style.display = 'flex';
   }
 
-  exitStreetMode() {
-    this.currentMode = 'aerial';
-    this.camera.fov = 46;
-    this.camera.updateProjectionMatrix();
-
-    // Switch back to aerial digital twin
-    this.switchPanorama('aerial');
-
-    const badge = document.getElementById('street-view-badge');
-    if (badge) badge.style.display = 'none';
-
-    const btnWalk = document.getElementById('btn-toggle-walk');
-    if (btnWalk) btnWalk.classList.remove('active');
-
-    this.navigateToLandmark('overview');
+  stopTour() {
+    this.tourActive = false;
+    const banner = document.getElementById('tour-hud-banner');
+    if (banner) banner.style.display = 'none';
   }
 
-  toggleStreetMode() {
-    if (this.currentMode === 'street') {
-      this.exitStreetMode();
-    } else {
-      this.enterStreetMode();
+  tourNext() {
+    this.tourStepIndex = (this.tourStepIndex + 1) % this.tourKeys.length;
+    this.navigateToLandmark(this.tourKeys[this.tourStepIndex]);
+  }
+
+  tourPrev() {
+    this.tourStepIndex = (this.tourStepIndex - 1 + this.tourKeys.length) % this.tourKeys.length;
+    this.navigateToLandmark(this.tourKeys[this.tourStepIndex]);
+  }
+
+  updateTour(delta) {
+    if (!this.tourActive) return;
+    this.tourTimer += delta;
+    const stepDuration = 9.0;
+
+    const progressFill = document.getElementById('tour-step-progress-fill');
+    if (progressFill) {
+      const pct = (this.tourTimer / stepDuration) * 100;
+      progressFill.style.width = `${Math.min(pct, 100)}%`;
+    }
+
+    if (this.tourTimer >= stepDuration) {
+      this.tourTimer = 0;
+      this.tourNext();
     }
   }
 
   /* ========================================================================
-     COMPASS SYNCHRONIZATION
+     COMPASS & ROTATION
      ======================================================================== */
   updateCompass() {
     const dial = document.getElementById('compass-dial');
@@ -511,9 +789,6 @@ export class MequinenzaViewer {
     dial.style.transform = `rotate(${angleDeg}deg)`;
   }
 
-  /* ========================================================================
-     EVENT BINDINGS
-     ======================================================================== */
   bindEvents() {
     window.addEventListener('resize', () => {
       const w = this.container.clientWidth || window.innerWidth;
@@ -535,7 +810,6 @@ export class MequinenzaViewer {
 
     this.controls.update();
 
-    // Floating sunbeam particles drift
     if (this.particleSystem) {
       const pos = this.particleSystem.geometry.attributes.position;
       for (let i = 1; i < pos.count * 3; i += 3) {
@@ -544,7 +818,6 @@ export class MequinenzaViewer {
       pos.needsUpdate = true;
     }
 
-    // Birds circling in the sky
     if (this.birds) {
       this.birds.forEach(b => {
         b.userData.angle += b.userData.speed * delta;
@@ -557,6 +830,7 @@ export class MequinenzaViewer {
 
     this.updateCompass();
     this.updateScreenPins();
+    this.updateTour(delta);
 
     this.renderer.render(this.scene, this.camera);
   }

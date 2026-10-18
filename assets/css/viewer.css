@@ -1519,3 +1519,276 @@ html, body {
   color: #111;
 }
 
+/* ==========================================================================
+   Advanced Heritage & poblevell.es Inspired UI Additions
+   ========================================================================== */
+
+/* Header Search Bar */
+.visor-buscador {
+  position: relative;
+  width: min(340px, 35vw);
+}
+
+.visor-buscador-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(14, 25, 38, 0.9);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: border-color var(--transition);
+}
+
+.visor-buscador-input-wrap:focus-within {
+  border-color: var(--gold);
+}
+
+.visor-buscar-input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 12.5px;
+  width: 100%;
+  outline: none;
+}
+
+.visor-buscar-input::placeholder {
+  color: #8c9ba9;
+}
+
+.visor-buscador-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: rgba(12, 22, 34, 0.96);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+  max-height: 280px;
+  overflow-y: auto;
+  display: none;
+  flex-direction: column;
+  z-index: 100;
+  padding: 4px;
+}
+
+.visor-buscador-results.open {
+  display: flex;
+}
+
+.buscador-item-btn {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.buscador-item-btn:hover {
+  background: rgba(232, 188, 114, 0.15);
+  color: var(--gold);
+}
+
+.buscador-item-title {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.buscador-item-subtitle {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+/* Real Photo Strip inside Right Dossier */
+.dossier-photo-strip-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.dossier-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dossier-photo-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+
+.dossier-photo-strip::-webkit-scrollbar {
+  height: 4px;
+}
+
+.dossier-photo-strip::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.dossier-photo-thumb {
+  width: 90px;
+  height: 65px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  position: relative;
+  background: #111a24;
+  transition: transform var(--transition), border-color var(--transition);
+}
+
+.dossier-photo-thumb:hover {
+  transform: scale(1.08);
+  border-color: var(--gold);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+}
+
+.dossier-photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Evidence Chip Badge */
+.chip--documentado {
+  background: rgba(62, 226, 178, 0.15);
+  border-color: rgba(62, 226, 178, 0.4);
+  color: #3ee2b2;
+}
+
+.chip--inferido {
+  background: rgba(232, 188, 114, 0.15);
+  border-color: rgba(232, 188, 114, 0.4);
+  color: var(--gold);
+}
+
+/* Time of Day Slider in Bottom Bar */
+.time-slider-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-pill);
+}
+
+.time-slider-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold-light);
+  min-width: 36px;
+}
+
+.time-slider-input {
+  width: 90px;
+  height: 4px;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+/* Guided Tour HUD Banner */
+.tour-hud-banner {
+  position: absolute;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  background: rgba(14, 25, 38, 0.94);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--panel-border-focus);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 16px var(--gold-glow);
+  z-index: 25;
+}
+
+.tour-step-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.tour-step-tag {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.tour-step-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.tour-progress-track {
+  width: 60px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.tour-progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--gold);
+  transition: width 0.1s linear;
+}
+
+.tour-btn-sm {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.tour-btn-sm:hover {
+  background: var(--gold);
+  color: #111;
+}
+
+/* Panorama View Switcher Dropdown */
+.pano-switcher-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+
