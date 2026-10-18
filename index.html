@@ -173,7 +173,7 @@
 
     <!-- Bottom Dock: Controls (Perspective, Time of Day, Names, Day Passing, Fullscreen) -->
     <footer class="bottom-dock">
-      <!-- Perspective Mode Floating Pill (Aérea vs Calle vs Composición) -->
+      <!-- Perspective Mode Floating Pill (Aérea vs Calle vs Composición vs Vecinos) -->
       <div class="view-perspective-selector glass-panel interactive" id="perspective-selector-bar">
         <button class="perspective-btn active" id="btn-view-aerial" title="Vista aérea global y navegación libre">
           <span class="p-icon">🌐</span>
@@ -186,6 +186,10 @@
         <button class="perspective-btn btn-blend-highlight" id="btn-view-blend" title="Alinear 3D y componer con la fotografía histórica original de archivo">
           <span class="p-icon">📷</span>
           <span>Foto de época</span>
+        </button>
+        <button class="perspective-btn" id="btn-view-memoria" title="Activar callejero popular y casas de los vecinos">
+          <span class="p-icon">👥</span>
+          <span>Vecinos</span>
         </button>
       </div>
 
@@ -210,6 +214,11 @@
         <button class="dock-btn" id="visor-nombres-alternar" title="Mostrar u ocultar los nombres de los lugares en 3D">
           <span>🏷️</span>
           <span>Nombres</span>
+        </button>
+
+        <button class="dock-btn" id="visor-miradores-alternar" title="Ver atriles y miradores de fotos históricas en 3D">
+          <span>📷</span>
+          <span>Miradores 3D</span>
         </button>
 
         <button class="dock-btn" id="visor-centrar-btn" title="Volver a la perspectiva inicial">
@@ -238,6 +247,35 @@
 
   </div>
 
+  <!-- Fullscreen 3D Re-photography Blend Layer (Directly on 3D viewport) -->
+  <div class="fullscreen-photo-blend" id="fullscreen-photo-blend" style="display:none;">
+    <div class="fs-blend-header">
+      <div class="fs-blend-info">
+        <span class="fs-blend-badge" id="fs-blend-year">1958</span>
+        <span class="fs-blend-title" id="fs-blend-title">Plaça d'Armes</span>
+      </div>
+      <button class="fs-blend-close-btn" id="fs-blend-close-btn" title="Cerrar superposición">✕ Salir</button>
+    </div>
+    <div class="fs-blend-viewport" id="fs-blend-viewport">
+      <img id="fs-blend-img" class="fs-blend-img" src="" alt="Superposición histórica">
+      <div class="fs-blend-divider" id="fs-blend-divider" style="display:none;">
+        <div class="fs-split-handle"><span>↔</span></div>
+      </div>
+    </div>
+    <div class="fs-blend-bottom-bar glass-panel">
+      <div class="fs-blend-modes">
+        <button class="fs-mode-btn active" id="fs-mode-split">↔ Cortinilla</button>
+        <button class="fs-mode-btn" id="fs-mode-fade">🎚️ Fundido</button>
+      </div>
+      <div class="fs-slider-wrap">
+        <span>Modelo 3D</span>
+        <input type="range" id="fs-blend-slider" min="0" max="100" value="50" class="blend-slider">
+        <span>Foto Original</span>
+        <span id="fs-slider-val" class="blend-readout">50%</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Historical Photo Composition Overlay (Photo Blend & Split Wipe HUD) -->
   <div class="photo-blend-hud glass-panel interactive" id="photo-blend-hud">
     <div class="blend-hud-header">
@@ -262,6 +300,7 @@
       <div class="blend-mode-pills">
         <button class="blend-mode-btn active" id="blend-mode-fade" title="Fundido progresivo de opacidad">🎚️ Fundido</button>
         <button class="blend-mode-btn" id="blend-mode-split" title="Cortinilla interactiva antes/después">↔ Cortinilla</button>
+        <button class="blend-mode-btn" id="blend-toggle-fullscreen" title="Ver superpuesto a pantalla completa sobre el 3D">🔲 Sobre el 3D</button>
       </div>
 
       <div class="blend-slider-wrap">
@@ -271,6 +310,7 @@
         <span class="blend-readout" id="blend-slider-val">50%</span>
       </div>
     </div>
+
 
     <!-- Identified features in this historic photo -->
     <div class="blend-features-section">

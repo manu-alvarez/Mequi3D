@@ -25,6 +25,17 @@ export class MequinenzaViewer {
     this.waterGroup = new THREE.Group();
     this.llautsGroup = new THREE.Group();
     this.streetPavementsGroup = new THREE.Group();
+    this.photoBillboardsGroup = new THREE.Group();
+    this.interactiveObjects = [];
+
+    // Historical Memory & Photo Cartography
+    this.photoBillboards = [];
+    this.memoryPlaces = [];
+    this.pinFilter = 'all'; // 'all' | 'places' | 'memory' | 'miradores'
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+    this.fullscreenPhotoBlendActive = false;
+
 
     // Textures & Materials
     this.textureLoader = new THREE.TextureLoader();
@@ -584,6 +595,8 @@ export class MequinenzaViewer {
     this.setupControls();
     this.setupLighting();
     this.loadTextures();
+    this.setupMemoryPlaces();
+    this.createHistoricalPhotoBillboards();
     this.create3DScreenPins();
     this.bindEvents();
     this.animate();
@@ -610,6 +623,7 @@ export class MequinenzaViewer {
     this.worldGroup.add(this.waterGroup);
     this.worldGroup.add(this.llautsGroup);
     this.worldGroup.add(this.streetPavementsGroup);
+    this.worldGroup.add(this.photoBillboardsGroup);
 
     // Cúpula celeste con horizonte aragonés difuminado
     this.createSkyDome();
@@ -635,9 +649,11 @@ export class MequinenzaViewer {
     const skyMat = new THREE.MeshBasicMaterial({
       map: skyTex,
       side: THREE.BackSide,
-      fog: false
+      fog: false,
+      depthWrite: false
     });
     this.skyDome = new THREE.Mesh(skyGeo, skyMat);
+    this.skyDome.renderOrder = -100;
     this.scene.add(this.skyDome);
   }
 
@@ -800,8 +816,6 @@ export class MequinenzaViewer {
       { id: 'ca_la_vila', file: 'assets/modelos/ca_la_vila.glb' },
       { id: 'grupo_escolar', file: 'assets/modelos/grupo_escolar.glb' },
       { id: 'pont_segre', file: 'assets/modelos/pont_segre.glb' },
-      { id: 'puente_ebro', file: 'assets/modelos/puente_ebro.glb' },
-      { id: 'muros_cerro', file: 'assets/modelos/muros_cerro.glb' },
       { id: 'mobiliario_plaza', file: 'assets/modelos/mobiliario_plaza.glb' }
     ];
 
@@ -872,37 +886,43 @@ export class MequinenzaViewer {
               this.houseMeshes.push(child);
               child.userData = { originalMaterial: child.material };
 
-              // Variación cromática auténtica de tejas árabes y revocos tradicionales
+              // Conservar y realzar el texturizado fotográfico auténtico de tejas y revocos
               if (child.material) {
                 const matName = child.material.name || '';
                 if (matName.includes('Teja')) {
-                  const roofTones = [
-                    { color: new THREE.Color(0x944a2e), roughness: 0.94 }, // Teja vieja tradicional tostada
-                    { color: new THREE.Color(0x743d26), roughness: 0.96 }, // Teja oscura pátina carbón
-                    { color: new THREE.Color(0xa8623a), roughness: 0.92 }, // Teja ocre asoleada
-                    { color: new THREE.Color(0x863e26), roughness: 0.95 }, // Teja rojiza apagada
-                    { color: new THREE.Color(0x623622), roughness: 0.98 }, // Teja pátina hollín
-                    { color: new THREE.Color(0x9e5634), roughness: 0.93 }  // Teja arcilla cocida
-                  ];
+                  // Tejas árabes: mantener color blanco neutro para no oscurecer la textura PBR original (teja_arabe_v02_color)
                   const hash = Math.abs(Math.sin((child.id || 1) * 12.9898 + (child.position.x || 0) * 4.14159)) * 10000;
-                  const selectedTone = roofTones[Math.floor(hash) % roofTones.length];
                   const clonedMat = child.material.clone();
-                  clonedMat.color.copy(selectedTone.color);
-                  clonedMat.roughness = selectedTone.roughness;
-                  clonedMat.metalness = 0.01;
+                  clonedMat.color.setRGB(1.0, 1.0, 1.0); // 100% fidelidad de textura sin ensuciarla
+                  clonedMat.roughness = 0.82 + (Math.floor(hash) % 4) * 0.03;
+                  clonedMat.metalness = 0.0;
+                  if (clonedMat.map) {
+                    clonedMat.map.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+                    clonedMat.map.needsUpdate = true;
+                  }
                   child.material = clonedMat;
                 } else if (matName.includes('Interior_hundido')) {
                   child.material.roughness = 0.98;
-                  child.material.color = new THREE.Color(0x16130f);
+                  child.material.color = new THREE.Color(0x1a1510);
                 } else if (matName.includes('Madera')) {
-                  child.material.roughness = 0.96;
-                  child.material.color = new THREE.Color(0x3e3024);
+                  child.material.roughness = 0.92;
+                  child.material.color = new THREE.Color(0x5a4838);
+                  if (child.material.map) {
+                    child.material.map.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+                  }
                 } else if (matName.includes('Revoco') || matName.includes('Mamposteria')) {
-                  child.material.roughness = 0.95;
-                  child.material.metalness = 0.01;
+                  // Revoco calizo y mampostería tradicional: color blanco neutro para preservar nitidez de granos y sillares
+                  child.material.color.setRGB(1.0, 1.0, 1.0);
+                  child.material.roughness = 0.88;
+                  child.material.metalness = 0.0;
+                  if (child.material.map) {
+                    child.material.map.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+                    child.material.map.needsUpdate = true;
+                  }
                 }
               }
-            } else if (m.id === 'mobiliario_plaza') {
+            }
+ else if (m.id === 'mobiliario_plaza') {
               if (child.material) {
                 child.material.roughness = 0.94;
                 child.material.side = THREE.DoubleSide;
@@ -1177,17 +1197,320 @@ export class MequinenzaViewer {
       { id: 'wp_ca_la_vila', name: 'Porches de Ca la Vila', pos: new THREE.Vector3(198.0, 76.5, 122.0), target: new THREE.Vector3(188.0, 77.0, 102.0), streetId: 'ca_la_vila' }
     ];
   }
+  setupMemoryPlaces() {
+    this.memoryPlaces = [
+      {
+        id: 'mem_bar_sport',
+        title: 'Bar Sport (Plaça d\'Armes)',
+        subtitle: 'El bar de la plaza, tertulias de mineros y barqueros',
+        icon: '☕',
+        pos: new THREE.Vector3(-2.0, 78.0, 160.0),
+        camPos: new THREE.Vector3(-3.5, 76.5, 172.0),
+        targetPos: new THREE.Vector3(-1.0, 78.0, 142.0),
+        landmarkId: 'placa_armes',
+        photo: 'assets/ref/pueblo/poble1.jpg',
+        year: '1958',
+        desc: 'El corazón social del Poble Vell. En sus mesas se reunían los mineros del lignito, los lauderetans y labradores. Punto de encuentro diario bajo las arcadas de la plaza.'
+      },
+      {
+        id: 'mem_ca_la_vila',
+        title: 'Ca la Vila (Ayuntamiento)',
+        subtitle: 'Casa Consistorial histórica con el reloj municipal',
+        icon: '🏛️',
+        pos: new THREE.Vector3(192.0, 78.5, 114.0),
+        camPos: new THREE.Vector3(198.0, 76.5, 122.0),
+        targetPos: new THREE.Vector3(188.0, 77.0, 102.0),
+        landmarkId: 'ca_la_vila',
+        photo: 'assets/ref/ajuntament/ajuntament1.jpg',
+        year: '1963',
+        desc: 'Sede del gobierno municipal del viejo pueblo de Mequinenza. Su balconada presidencial y arcos de piedra fueron testigos de todas las fiestas mayores y pregones.'
+      },
+      {
+        id: 'mem_cine_victoria',
+        title: 'Cine Victoria',
+        subtitle: 'Sala de baile, cine y teatro en Carrer Major',
+        icon: '🎬',
+        pos: new THREE.Vector3(164.0, 81.5, 126.0),
+        camPos: new THREE.Vector3(170.0, 81.0, 134.0),
+        targetPos: new THREE.Vector3(164.0, 81.5, 126.0),
+        landmarkId: 'carrer_major',
+        photo: 'assets/ref/pueblo/poble4.jpg',
+        year: '1960',
+        desc: 'Donde acudía todo el pueblo los domingos para proyecciones cinematográficas, teatro aficionado y los grandes bailes de fiesta mayor.'
+      },
+      {
+        id: 'mem_casa_calau',
+        title: 'Casa de Calau (Jesús Moncada)',
+        subtitle: 'Cuna del universal autor de "Camí de sirga"',
+        icon: '📖',
+        pos: new THREE.Vector3(15.0, 79.5, 154.0),
+        camPos: new THREE.Vector3(22.0, 78.5, 160.0),
+        targetPos: new THREE.Vector3(14.0, 79.0, 150.0),
+        landmarkId: 'pueblo',
+        photo: 'assets/ref/pueblo/poble5.jpg',
+        year: '1961',
+        desc: 'Hogar familiar del escritor Jesús Moncada. Desde estas ventanas y callejones observó a los barqueros, cargadores y mineros que después cobrarían vida en la literatura universal.'
+      },
+      {
+        id: 'mem_carniceria',
+        title: 'Carnicería de Ramonico',
+        subtitle: 'Comercio y ultramarinos del Carrer Major',
+        icon: '🥩',
+        pos: new THREE.Vector3(174.0, 81.5, 131.0),
+        camPos: new THREE.Vector3(172.5, 80.5, 138.0),
+        targetPos: new THREE.Vector3(167.0, 81.5, 110.0),
+        landmarkId: 'carrer_major',
+        photo: 'assets/ref/pueblo/poble2.jpg',
+        year: '1962',
+        desc: 'Comercio vecinal de referencia donde se compraban los embutidos artesanales y género fresco traído de las huertas del Segre y el Cinca.'
+      },
+      {
+        id: 'mem_muelle_llauts',
+        title: 'Embarcadero de los Llaüts',
+        subtitle: 'Punto de carga de carbón y sirga fluvial del Ebro',
+        icon: '⛵',
+        pos: new THREE.Vector3(68.0, 70.0, 188.0),
+        camPos: new THREE.Vector3(84.0, 70.0, 195.0),
+        targetPos: new THREE.Vector3(42.0, 69.5, 185.0),
+        landmarkId: 'lo_muro',
+        photo: 'assets/ref/llauts/llauts1.jpg',
+        year: '1955',
+        desc: 'Atracadero histórico donde fondeaban los laúdes de madera de pino de 18 a 22 metros, capaces de transportar 30 toneladas de carbón río abajo hacia Fayón y Tortosa.'
+      },
+      {
+        id: 'mem_esglesia_asuncion',
+        title: 'Parroquia de la Asunción',
+        subtitle: 'Campanario barroco y centro religioso de la villa',
+        icon: '⛪',
+        pos: new THREE.Vector3(88.0, 88.0, 136.0),
+        camPos: new THREE.Vector3(80.0, 77.2, 155.0),
+        targetPos: new THREE.Vector3(88.0, 86.0, 136.0),
+        landmarkId: 'esglesia',
+        photo: 'assets/ref/esglesia/esglesia1.jpg',
+        year: '1955',
+        desc: 'El templo del siglo XVI que presidía la vida comunitaria: bautizos, bodas y el toque de campanas que marcaba las jornadas de minas y navegación.'
+      },
+      {
+        id: 'mem_fonda_sol',
+        title: 'Fonda del Sol y Pensión',
+        subtitle: 'Hospedaje de viajantes y maestros en Carrer Saragossa',
+        icon: '🏨',
+        pos: new THREE.Vector3(-69.0, 79.5, 172.0),
+        camPos: new THREE.Vector3(-65.0, 78.0, 185.0),
+        targetPos: new THREE.Vector3(-85.0, 83.5, 165.0),
+        landmarkId: 'carrer_saragossa',
+        photo: 'assets/ref/pueblo/poble3.jpg',
+        year: '1960',
+        desc: 'Antigua fonda con comedores de vigas de madera donde se alojaban ingenieros de minas, maestros, comisionistas de fruta y viajeros del tren de Fayón.'
+      },
+      {
+        id: 'mem_colegio',
+        title: 'Grupo Escolar María Quintana',
+        subtitle: 'Edificio modernista de 1927 para la infancia mequinenzana',
+        icon: '🏫',
+        pos: new THREE.Vector3(-185.0, 78.0, 215.0),
+        camPos: new THREE.Vector3(-155.0, 95.0, 260.0),
+        targetPos: new THREE.Vector3(-185.0, 78.0, 215.0),
+        landmarkId: 'colegio',
+        photo: 'assets/ref/elements/elements1.jpg',
+        year: '1959',
+        desc: 'El único edificio del Poble Vell que sobrevivió al embalse por su altitud. Hoy alberga los renombrados Museos de Mequinenza (Museo de la Mina y Museo de la Historia).'
+      }
+    ];
+  }
+
+  createHistoricalPhotoBillboards() {
+    this.photoBillboards = [
+      {
+        id: 'pb_placa',
+        title: 'Plaça d\'Armes y Bar Sport',
+        year: '1958',
+        file: 'assets/ref/pueblo/poble1.jpg',
+        landmarkId: 'placa_armes',
+        pos: new THREE.Vector3(-4.0, 75.3, 161.0),
+        rotY: 0.0,
+        width: 6.8,
+        height: 4.8,
+        camPos: new THREE.Vector3(-3.5, 76.5, 172.0),
+        targetPos: new THREE.Vector3(-1.0, 78.0, 142.0),
+        desc: 'El corazón de la vida cotidiana. Bar Sport, arcadas de sillería y tertulias.'
+      },
+      {
+        id: 'pb_carrer_major',
+        title: 'Carrer Major y Comercios',
+        year: '1962',
+        file: 'assets/ref/pueblo/poble2.jpg',
+        landmarkId: 'carrer_major',
+        pos: new THREE.Vector3(169.5, 79.6, 128.0),
+        rotY: 0.1,
+        width: 5.6,
+        height: 4.4,
+        camPos: new THREE.Vector3(172.5, 80.5, 138.0),
+        targetPos: new THREE.Vector3(167.0, 81.5, 110.0),
+        desc: 'Calle comercial empedrada, balcones de forja y vida de barrio.'
+      },
+      {
+        id: 'pb_esglesia',
+        title: 'Placeta Missa y Campanario',
+        year: '1955',
+        file: 'assets/ref/esglesia/esglesia1.jpg',
+        landmarkId: 'esglesia',
+        pos: new THREE.Vector3(82.0, 77.2, 146.0),
+        rotY: -0.35,
+        width: 6.2,
+        height: 4.6,
+        camPos: new THREE.Vector3(80.0, 77.2, 155.0),
+        targetPos: new THREE.Vector3(88.0, 86.0, 136.0),
+        desc: 'Iglesia de la Asunción y la escalinata de las cofradías de barqueros.'
+      },
+      {
+        id: 'pb_llauts',
+        title: 'Lo Muro y Llaüts del Ebro',
+        year: '1955',
+        file: 'assets/ref/llauts/llauts1.jpg',
+        landmarkId: 'lo_muro',
+        pos: new THREE.Vector3(76.0, 68.5, 186.0),
+        rotY: -0.22,
+        width: 6.8,
+        height: 4.5,
+        camPos: new THREE.Vector3(84.0, 70.0, 195.0),
+        targetPos: new THREE.Vector3(42.0, 69.5, 185.0),
+        desc: 'Llaüts amarrados a los norays de piedra cargando lignito hacia Fayón.'
+      },
+      {
+        id: 'pb_ca_la_vila',
+        title: 'Ca la Vila (Ayuntamiento)',
+        year: '1963',
+        file: 'assets/ref/ajuntament/ajuntament1.jpg',
+        landmarkId: 'ca_la_vila',
+        pos: new THREE.Vector3(193.0, 76.5, 114.0),
+        rotY: 0.25,
+        width: 6.2,
+        height: 4.6,
+        camPos: new THREE.Vector3(198.0, 76.5, 122.0),
+        targetPos: new THREE.Vector3(188.0, 77.0, 102.0),
+        desc: 'Fachada con reloj municipal y soportales de arcos de medio punto.'
+      },
+      {
+        id: 'pb_saragossa',
+        title: 'Carrer Saragossa y Portaladas',
+        year: '1960',
+        file: 'assets/ref/pueblo/poble3.jpg',
+        landmarkId: 'carrer_saragossa',
+        pos: new THREE.Vector3(-66.0, 77.5, 175.0),
+        rotY: -0.4,
+        width: 6.0,
+        height: 4.4,
+        camPos: new THREE.Vector3(-65.0, 78.0, 185.0),
+        targetPos: new THREE.Vector3(-85.0, 83.5, 165.0),
+        desc: 'Casonas de sillería con grandes portones de madera de carruajes.'
+      },
+      {
+        id: 'pb_castillo',
+        title: 'Patio de Armas del Castillo',
+        year: '1950',
+        file: 'assets/ref/castillo/castell3.jpg',
+        landmarkId: 'castillo',
+        pos: new THREE.Vector3(-7.5, 246.0, -238.0),
+        rotY: 0.1,
+        width: 6.5,
+        height: 4.8,
+        camPos: new THREE.Vector3(-8.0, 248.0, -235.0),
+        targetPos: new THREE.Vector3(-12.0, 252.0, -250.0),
+        desc: 'Patio gótico militar y torre del homenaje dominando el valle.'
+      }
+    ];
+
+    this.photoBillboards.forEach(b => {
+      const group = new THREE.Group();
+      group.position.copy(b.pos);
+      group.rotation.y = b.rotY;
+
+      // 1. Textura fotográfica auténtica de época
+      const tex = this.textureLoader.load(b.file);
+      tex.colorSpace = THREE.SRGBColorSpace;
+
+      const photoMat = new THREE.MeshStandardMaterial({
+        map: tex,
+        roughness: 0.82,
+        metalness: 0.04,
+        side: THREE.DoubleSide
+      });
+
+      const photoPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(b.width, b.height),
+        photoMat
+      );
+      photoPlane.position.y = b.height / 2 + 1.2;
+      photoPlane.castShadow = true;
+      photoPlane.userData = { isPhotoBillboard: true, data: b };
+      group.add(photoPlane);
+      this.interactiveObjects.push(photoPlane);
+
+      // 2. Marco vintage de madera de nogal y bisel de bronce
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0x221810,
+        roughness: 0.78,
+        metalness: 0.15
+      });
+      const frameMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(b.width + 0.35, b.height + 0.35, 0.12),
+        frameMat
+      );
+      frameMesh.position.copy(photoPlane.position);
+      frameMesh.position.z -= 0.02;
+      frameMesh.castShadow = true;
+      group.add(frameMesh);
+
+      // Placa superior dorada con el año
+      const brassMat = new THREE.MeshStandardMaterial({
+        color: 0xd4a558,
+        roughness: 0.45,
+        metalness: 0.7
+      });
+      const headerPlaque = new THREE.Mesh(
+        new THREE.BoxGeometry(b.width * 0.65, 0.32, 0.15),
+        brassMat
+      );
+      headerPlaque.position.set(0, photoPlane.position.y + b.height / 2 + 0.2, 0);
+      group.add(headerPlaque);
+
+      // 3. Postes de sujeción al suelo de fundición
+      const postGeo = new THREE.CylinderGeometry(0.08, 0.1, photoPlane.position.y - b.height / 2 + 0.2, 12);
+      const postMat = new THREE.MeshStandardMaterial({ color: 0x181e26, roughness: 0.8, metalness: 0.35 });
+
+      const postL = new THREE.Mesh(postGeo, postMat);
+      postL.position.set(-b.width * 0.38, (photoPlane.position.y - b.height / 2) / 2, 0);
+      group.add(postL);
+
+      const postR = new THREE.Mesh(postGeo, postMat);
+      postR.position.set(b.width * 0.38, (photoPlane.position.y - b.height / 2) / 2, 0);
+      group.add(postR);
+
+      // Base anclada
+      const footGeo = new THREE.BoxGeometry(b.width * 0.85, 0.14, 0.55);
+      const footMesh = new THREE.Mesh(footGeo, postMat);
+      footMesh.position.set(0, 0.07, 0);
+      group.add(footMesh);
+
+      this.photoBillboardsGroup.add(group);
+    });
+  }
+
   create3DScreenPins() {
     const pinContainer = document.getElementById('map-pins-layer');
     if (!pinContainer) return;
     pinContainer.innerHTML = '';
+    this.pinElements.clear();
 
+    // 1. Lugares Notables y Monumentos
     Object.values(this.landmarks).forEach(landmark => {
       if (!landmark.pinPos) return;
 
       const pin = document.createElement('div');
-      pin.className = 'map-pin interactive';
+      pin.className = 'map-pin landmark-pin interactive';
       pin.dataset.id = landmark.id;
+      pin.dataset.type = 'landmark';
 
       let icon = '📍';
       if (landmark.id === 'castillo') icon = '🏰';
@@ -1207,10 +1530,95 @@ export class MequinenzaViewer {
       });
 
       pinContainer.appendChild(pin);
-      this.pinElements.set(landmark.id, {
+      this.pinElements.set(`lm_${landmark.id}`, {
         element: pin,
+        type: 'landmark',
         worldPos: landmark.pinPos.clone()
       });
+    });
+
+    // 2. Callejero de la Memoria (Casas y Comercios Populares)
+    (this.memoryPlaces || []).forEach(place => {
+      const pin = document.createElement('div');
+      pin.className = 'map-pin memory-pin interactive';
+      pin.dataset.id = place.id;
+      pin.dataset.type = 'memory';
+
+      pin.innerHTML = `
+        <span class="pin-icon">${place.icon}</span>
+        <span class="pin-title">${place.title}</span>
+      `;
+
+      pin.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.flyCameraTo(place.camPos, place.targetPos, 1400, 55);
+        if (place.landmarkId && this.landmarks[place.landmarkId]) {
+          this.activeLandmarkId = place.landmarkId;
+          this.updateDossierCard({
+            ...this.landmarks[place.landmarkId],
+            title: place.title,
+            subtitle: place.subtitle,
+            desc: place.desc,
+            photos: [place.photo, ...(this.landmarks[place.landmarkId].photos || [])]
+          });
+        }
+      });
+
+      pinContainer.appendChild(pin);
+      this.pinElements.set(place.id, {
+        element: pin,
+        type: 'memory',
+        worldPos: place.pos.clone()
+      });
+    });
+
+    // 3. Atriles de Fotos Históricas (Miradores 3D)
+    (this.photoBillboards || []).forEach(b => {
+      const pin = document.createElement('div');
+      pin.className = 'map-pin photo-mirador-pin interactive';
+      pin.dataset.id = b.id;
+      pin.dataset.type = 'mirador';
+
+      pin.innerHTML = `
+        <span class="pin-icon">📷</span>
+        <span class="pin-title">${b.year} · ${b.title}</span>
+      `;
+
+      pin.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.flyCameraTo(b.camPos, b.targetPos, 1400, 55);
+        this.openPhotoBlend(b.landmarkId);
+      });
+
+      pinContainer.appendChild(pin);
+      const topPos = b.pos.clone();
+      topPos.y += b.height + 1.8;
+      this.pinElements.set(b.id, {
+        element: pin,
+        type: 'mirador',
+        worldPos: topPos
+      });
+    });
+
+    this.applyPinFilter();
+  }
+
+  setPinFilter(filter) {
+    this.pinFilter = filter;
+    this.applyPinFilter();
+  }
+
+  applyPinFilter() {
+    this.pinElements.forEach(data => {
+      if (this.pinFilter === 'all') {
+        data.element.style.display = 'flex';
+      } else if (this.pinFilter === 'places') {
+        data.element.style.display = data.type === 'landmark' ? 'flex' : 'none';
+      } else if (this.pinFilter === 'memory') {
+        data.element.style.display = (data.type === 'memory' || data.type === 'mirador') ? 'flex' : 'none';
+      } else if (this.pinFilter === 'miradores') {
+        data.element.style.display = data.type === 'mirador' ? 'flex' : 'none';
+      }
     });
   }
 
@@ -1220,7 +1628,20 @@ export class MequinenzaViewer {
     const h = this.container.clientHeight || window.innerHeight;
     const tempV = new THREE.Vector3();
 
-    this.pinElements.forEach((data, id) => {
+    this.pinElements.forEach((data) => {
+      if (this.pinFilter === 'places' && data.type !== 'landmark') {
+        data.element.style.display = 'none';
+        return;
+      }
+      if (this.pinFilter === 'memory' && data.type !== 'memory' && data.type !== 'mirador') {
+        data.element.style.display = 'none';
+        return;
+      }
+      if (this.pinFilter === 'miradores' && data.type !== 'mirador') {
+        data.element.style.display = 'none';
+        return;
+      }
+
       tempV.copy(data.worldPos);
       tempV.project(this.camera);
 
@@ -1237,6 +1658,43 @@ export class MequinenzaViewer {
       data.element.style.transform = `translate(-50%, -100%) translate(${screenX}px, ${screenY}px)`;
     });
   }
+
+  onCanvasClick(e) {
+    if (this.isAnimatingCamera) return;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    const intersects = this.raycaster.intersectObjects(this.interactiveObjects, true);
+
+    if (intersects.length > 0) {
+      const hit = intersects[0].object;
+      if (hit.userData && hit.userData.isPhotoBillboard) {
+        const b = hit.userData.data;
+        if (b) {
+          this.flyCameraTo(b.camPos, b.targetPos, 1400, 55);
+          this.openPhotoBlend(b.landmarkId);
+        }
+      }
+    }
+  }
+
+  onCanvasPointerMove(e) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    const intersects = this.raycaster.intersectObjects(this.interactiveObjects, true);
+
+    if (intersects.length > 0) {
+      this.renderer.domElement.style.cursor = 'pointer';
+    } else {
+      this.renderer.domElement.style.cursor = 'default';
+    }
+  }
+
 
   /* ========================================================================
      ILUMINACIÓN SEGÚN HORA DEL DÍA (Inspirado en poblevell.es)
@@ -1545,6 +2003,97 @@ export class MequinenzaViewer {
     }
   }
 
+  toggleFullscreenPhotoBlend() {
+    if (this.fullscreenPhotoBlendActive) {
+      this.closeFullscreenPhotoBlend();
+    } else {
+      this.openFullscreenPhotoBlend(this.activeLandmarkId);
+    }
+  }
+
+  openFullscreenPhotoBlend(landmarkId) {
+    const id = landmarkId || this.activeLandmarkId || 'placa_armes';
+    let landmark = this.landmarks[id];
+    if (!landmark || !landmark.photoMatch) {
+      landmark = this.landmarks['placa_armes'];
+    }
+    if (!landmark || !landmark.photoMatch) return;
+
+    const pm = landmark.photoMatch;
+    this.fullscreenPhotoBlendActive = true;
+
+    // Alinear cámara 3D con la toma original
+    this.flyCameraTo(pm.camPos, pm.targetPos, 1400, pm.fov || 55);
+
+    const fsLayer = document.getElementById('fullscreen-photo-blend');
+    const img = document.getElementById('fs-blend-img');
+    const year = document.getElementById('fs-blend-year');
+    const title = document.getElementById('fs-blend-title');
+
+    if (img) img.src = pm.src;
+    if (year) year.textContent = `Archivo Histórico · ${pm.year}`;
+    if (title) title.textContent = pm.title;
+
+    if (fsLayer) {
+      fsLayer.style.display = 'flex';
+      fsLayer.classList.add('active');
+    }
+
+    // Ocultar modal flotante si estaba abierto para no estorbar
+    const hud = document.getElementById('photo-blend-hud');
+    if (hud) hud.classList.remove('active');
+
+    this.setFullscreenBlendMode(this.photoBlendMode || 'split');
+    const fsSlider = document.getElementById('fs-blend-slider');
+    if (fsSlider) fsSlider.value = this.photoBlendValue || 50;
+    this.updateFullscreenBlendVisual(this.photoBlendValue || 50);
+  }
+
+  closeFullscreenPhotoBlend() {
+    this.fullscreenPhotoBlendActive = false;
+    const fsLayer = document.getElementById('fullscreen-photo-blend');
+    if (fsLayer) {
+      fsLayer.style.display = 'none';
+      fsLayer.classList.remove('active');
+    }
+  }
+
+  setFullscreenBlendMode(mode) {
+    this.photoBlendMode = mode;
+    const btnSplit = document.getElementById('fs-mode-split');
+    const btnFade = document.getElementById('fs-mode-fade');
+    if (btnSplit) btnSplit.classList.toggle('active', mode === 'split');
+    if (btnFade) btnFade.classList.toggle('active', mode === 'fade');
+    this.updateFullscreenBlendVisual(this.photoBlendValue || 50);
+  }
+
+  updateFullscreenBlendVisual(val) {
+    this.photoBlendValue = val;
+    const img = document.getElementById('fs-blend-img');
+    const divider = document.getElementById('fs-blend-divider');
+    const readout = document.getElementById('fs-slider-val');
+
+    if (readout) readout.textContent = `${val}%`;
+
+    if (this.photoBlendMode === 'fade') {
+      if (img) {
+        img.style.opacity = (val / 100).toString();
+        img.style.clipPath = 'none';
+      }
+      if (divider) divider.style.display = 'none';
+    } else {
+      if (img) {
+        img.style.opacity = '1';
+        img.style.clipPath = `polygon(0 0, ${val}% 0, ${val}% 100%, 0 100%)`;
+      }
+      if (divider) {
+        divider.style.display = 'block';
+        divider.style.left = `${val}%`;
+      }
+    }
+  }
+
+
   updateDossierCard(data) {
     const card = document.getElementById('historical-dossier-card');
     if (!card) return;
@@ -1737,10 +2286,33 @@ export class MequinenzaViewer {
       });
     }
 
-    // Controles de Modo de Perspectiva (Aérea vs A Pie de Calle vs Composición)
-    document.getElementById('btn-view-aerial')?.addEventListener('click', () => this.setPerspectiveMode('aerial'));
-    document.getElementById('btn-view-street')?.addEventListener('click', () => this.setPerspectiveMode('street'));
-    document.getElementById('btn-view-blend')?.addEventListener('click', () => this.openPhotoBlend(this.activeLandmarkId));
+    // Clics directos con Raycaster sobre atriles de memoria y 3D
+    this.renderer.domElement.addEventListener('click', (e) => this.onCanvasClick(e));
+    this.renderer.domElement.addEventListener('pointermove', (e) => this.onCanvasPointerMove(e));
+
+    // Controles de Modo de Perspectiva (Aérea vs A Pie de Calle vs Composición vs Vecinos)
+    document.getElementById('btn-view-aerial')?.addEventListener('click', () => {
+      this.setPinFilter('all');
+      this.setPerspectiveMode('aerial');
+    });
+    document.getElementById('btn-view-street')?.addEventListener('click', () => {
+      this.setPerspectiveMode('street');
+    });
+    document.getElementById('btn-view-blend')?.addEventListener('click', () => {
+      this.openPhotoBlend(this.activeLandmarkId);
+    });
+    document.getElementById('btn-view-memoria')?.addEventListener('click', () => {
+      document.querySelectorAll('.perspective-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-view-memoria')?.classList.add('active');
+      this.setPinFilter(this.pinFilter === 'memory' ? 'all' : 'memory');
+    });
+
+    // Alternar atriles y miradores fotográficos 3D
+    document.getElementById('visor-miradores-alternar')?.addEventListener('click', () => {
+      const nextFilter = this.pinFilter === 'miradores' ? 'all' : 'miradores';
+      this.setPinFilter(nextFilter);
+      document.getElementById('visor-miradores-alternar')?.classList.toggle('active', nextFilter === 'miradores');
+    });
 
     // Acciones dentro de la Ficha Histórica (Dossier)
     document.getElementById('dossier-street-view-btn')?.addEventListener('click', () => this.setPerspectiveMode('street'));
@@ -1750,8 +2322,17 @@ export class MequinenzaViewer {
     document.getElementById('blend-hud-close-btn')?.addEventListener('click', () => this.closePhotoBlend());
     document.getElementById('blend-mode-fade')?.addEventListener('click', () => this.setPhotoBlendMode('fade'));
     document.getElementById('blend-mode-split')?.addEventListener('click', () => this.setPhotoBlendMode('split'));
+    document.getElementById('blend-toggle-fullscreen')?.addEventListener('click', () => this.toggleFullscreenPhotoBlend());
     document.getElementById('blend-opacity-slider')?.addEventListener('input', (e) => {
       this.updatePhotoBlendVisual(parseInt(e.target.value, 10));
+    });
+
+    // Controles de Superposición a Pantalla Completa (Time-Machine Viewport)
+    document.getElementById('fs-blend-close-btn')?.addEventListener('click', () => this.closeFullscreenPhotoBlend());
+    document.getElementById('fs-mode-split')?.addEventListener('click', () => this.setFullscreenBlendMode('split'));
+    document.getElementById('fs-mode-fade')?.addEventListener('click', () => this.setFullscreenBlendMode('fade'));
+    document.getElementById('fs-blend-slider')?.addEventListener('input', (e) => {
+      this.updateFullscreenBlendVisual(parseInt(e.target.value, 10));
     });
 
     // Selector rápido de calles históricas a nivel de suelo
@@ -1793,12 +2374,14 @@ export class MequinenzaViewer {
       if (e.key === 'Escape') {
         this.closeLightbox();
         this.closePhotoBlend();
+        this.closeFullscreenPhotoBlend();
         document.querySelectorAll('.poble-modal-backdrop').forEach(m => m.classList.remove('active'));
         document.getElementById('historical-dossier-card')?.classList.remove('visible');
         document.querySelector('.sidebar-nav')?.classList.remove('mobile-open');
       }
     });
   }
+
 
   onWindowResize() {
     const w = this.container.clientWidth || window.innerWidth;
