@@ -602,14 +602,80 @@ export class MequinenzaViewer {
 
   setupScene() {
     this.scene = new THREE.Scene();
-    // Cielo atmosférico realista del valle del Ebro y horizonte natural
-    this.scene.background = new THREE.Color(0xb6c8d8);
-    this.scene.fog = new THREE.FogExp2(0xc3cbcf, 0.00045);
+    // Cielo atmosférico cálido del valle del Ebro
+    this.scene.background = new THREE.Color(0x8faec7);
+    this.scene.fog = new THREE.FogExp2(0xc4baa8, 0.00032);
     this.scene.add(this.worldGroup);
     this.worldGroup.add(this.modelsGroup);
     this.worldGroup.add(this.waterGroup);
     this.worldGroup.add(this.llautsGroup);
     this.worldGroup.add(this.streetPavementsGroup);
+
+    // Cúpula celeste con horizonte aragonés difuminado
+    this.createSkyDome();
+  }
+
+  createSkyDome() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0.0, '#3a6c94'); // Cenit azul mediterráneo
+    grad.addColorStop(0.35, '#6a96b8');
+    grad.addColorStop(0.65, '#a4c2d6');
+    grad.addColorStop(0.88, '#d4c7b2'); // Bruma cálida caliza sobre el horizonte
+    grad.addColorStop(1.0, '#dfd3be');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    const skyTex = new THREE.CanvasTexture(canvas);
+    const skyGeo = new THREE.SphereGeometry(18000, 32, 24);
+    const skyMat = new THREE.MeshBasicMaterial({
+      map: skyTex,
+      side: THREE.BackSide,
+      fog: false
+    });
+    this.skyDome = new THREE.Mesh(skyGeo, skyMat);
+    this.scene.add(this.skyDome);
+  }
+
+  createGroundDetailTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#8c7d6c';
+    ctx.fillRect(0, 0, 512, 512);
+
+    const imgData = ctx.getImageData(0, 0, 512, 512);
+    const data = imgData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const noise = (Math.random() - 0.5) * 45;
+      data[i] = Math.min(255, Math.max(0, data[i] + noise));
+      data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise * 0.9));
+      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise * 0.75));
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    const pebbleColors = ['#a89985', '#6e6152', '#b3a492', '#5a4f42', '#918270'];
+    for (let j = 0; j < 350; j++) {
+      const px = Math.random() * 512;
+      const py = Math.random() * 512;
+      const pr = 1.5 + Math.random() * 3.5;
+      ctx.fillStyle = pebbleColors[Math.floor(Math.random() * pebbleColors.length)];
+      ctx.beginPath();
+      ctx.arc(px, py, pr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.generateMipmaps = true;
+    return tex;
   }
 
   setupCamera() {
@@ -631,7 +697,7 @@ export class MequinenzaViewer {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.25;
+    this.renderer.toneMappingExposure = 0.96;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.container.appendChild(this.renderer.domElement);
@@ -652,27 +718,31 @@ export class MequinenzaViewer {
   }
 
   setupLighting() {
-    // Luz de cielo y rebote de tierra caliza (parámetros calibrados de poblevell.es)
-    this.hemiLight = new THREE.HemisphereLight(0xddeef8, 0x8a7a64, 1.5);
+    // Luz de cielo mediterránea y rebote de caliza del valle del Ebro
+    this.hemiLight = new THREE.HemisphereLight(0xd4e5f2, 0x7a6b57, 0.75);
     this.scene.add(this.hemiLight);
 
-    this.ambientLight = new THREE.AmbientLight(0xfff7ee, 0.45);
+    this.ambientLight = new THREE.AmbientLight(0xfff6ec, 0.22);
     this.scene.add(this.ambientLight);
 
-    // Sol direccional principal cálido
-    this.sunLight = new THREE.DirectionalLight(0xfff1d1, 3.0);
-    this.sunLight.position.set(250, 480, 280);
+    // Sol direccional principal cálido calibrado para sombras fotográficas suaves
+    this.sunLight = new THREE.DirectionalLight(0xfff4e0, 1.75);
     this.sunLight.castShadow = true;
-    this.sunLight.shadow.mapSize.width = 2048;
-    this.sunLight.shadow.mapSize.height = 2048;
+    this.sunLight.shadow.mapSize.width = 4096;
+    this.sunLight.shadow.mapSize.height = 4096;
     this.sunLight.shadow.camera.near = 50;
-    this.sunLight.shadow.camera.far = 2500;
-    this.sunLight.shadow.camera.left = -600;
-    this.sunLight.shadow.camera.right = 600;
-    this.sunLight.shadow.camera.top = 600;
-    this.sunLight.shadow.camera.bottom = -600;
-    this.sunLight.shadow.bias = -0.0002;
+    this.sunLight.shadow.camera.far = 1600;
+    this.sunLight.shadow.camera.left = -320;
+    this.sunLight.shadow.camera.right = 320;
+    this.sunLight.shadow.camera.top = 320;
+    this.sunLight.shadow.camera.bottom = -320;
+    this.sunLight.shadow.bias = -0.00035;
+    this.sunLight.shadow.normalBias = 0.035;
+    this.sunLight.shadow.radius = 2.0;
+
+    this.sunLight.target.position.set(35, 75, 150);
     this.scene.add(this.sunLight);
+    this.scene.add(this.sunLight.target);
   }
 
   loadTextures() {
@@ -750,14 +820,47 @@ export class MequinenzaViewer {
             child.castShadow = true;
             child.receiveShadow = true;
 
+            // 1. Filtrar mallas de prueba o duplicadas de Lo Muro (elimina el bloque negro invasivo y la rampa sin terminar en el agua)
+            if (m.id === 'lo_muro') {
+              const n = child.name || '';
+              if (n.startsWith('LMV8_Casa_final') ||
+                  n.startsWith('LMV8_Carretera') ||
+                  n.startsWith('LMV8_Acceso_puente')) {
+                child.visible = false;
+                return;
+              }
+            }
+
             if (m.isTerrain) {
               this.terrainMeshes.push(child);
               this.terrainMesh = child;
-              child.material = new THREE.MeshStandardMaterial({
+              const detailTex = this.createGroundDetailTexture();
+              detailTex.wrapS = THREE.RepeatWrapping;
+              detailTex.wrapT = THREE.RepeatWrapping;
+              detailTex.repeat.set(90, 90);
+
+              const terrainMat = new THREE.MeshStandardMaterial({
                 map: this.textures.suelo_1965,
-                roughness: 0.95,
-                metalness: 0.02
+                roughness: 0.96,
+                metalness: 0.01
               });
+
+              terrainMat.onBeforeCompile = (shader) => {
+                shader.uniforms.detailMap = { value: detailTex };
+                shader.fragmentShader = `
+                  uniform sampler2D detailMap;
+                ` + shader.fragmentShader;
+                shader.fragmentShader = shader.fragmentShader.replace(
+                  '#include <map_fragment>',
+                  `
+                  #include <map_fragment>
+                  vec4 microGrain = texture2D(detailMap, vUv * 90.0);
+                  diffuseColor.rgb *= (0.75 + 0.5 * microGrain.rgb);
+                  `
+                );
+              };
+
+              child.material = terrainMat;
             } else if (m.isTermino) {
               this.terminoMesh = child;
               child.material = new THREE.MeshStandardMaterial({
@@ -768,6 +871,46 @@ export class MequinenzaViewer {
             } else if (m.isTown) {
               this.houseMeshes.push(child);
               child.userData = { originalMaterial: child.material };
+
+              // Variación cromática auténtica de tejas árabes y revocos tradicionales
+              if (child.material) {
+                const matName = child.material.name || '';
+                if (matName.includes('Teja')) {
+                  const roofTones = [
+                    { color: new THREE.Color(0x944a2e), roughness: 0.94 }, // Teja vieja tradicional tostada
+                    { color: new THREE.Color(0x743d26), roughness: 0.96 }, // Teja oscura pátina carbón
+                    { color: new THREE.Color(0xa8623a), roughness: 0.92 }, // Teja ocre asoleada
+                    { color: new THREE.Color(0x863e26), roughness: 0.95 }, // Teja rojiza apagada
+                    { color: new THREE.Color(0x623622), roughness: 0.98 }, // Teja pátina hollín
+                    { color: new THREE.Color(0x9e5634), roughness: 0.93 }  // Teja arcilla cocida
+                  ];
+                  const hash = Math.abs(Math.sin((child.id || 1) * 12.9898 + (child.position.x || 0) * 4.14159)) * 10000;
+                  const selectedTone = roofTones[Math.floor(hash) % roofTones.length];
+                  const clonedMat = child.material.clone();
+                  clonedMat.color.copy(selectedTone.color);
+                  clonedMat.roughness = selectedTone.roughness;
+                  clonedMat.metalness = 0.01;
+                  child.material = clonedMat;
+                } else if (matName.includes('Interior_hundido')) {
+                  child.material.roughness = 0.98;
+                  child.material.color = new THREE.Color(0x16130f);
+                } else if (matName.includes('Madera')) {
+                  child.material.roughness = 0.96;
+                  child.material.color = new THREE.Color(0x3e3024);
+                } else if (matName.includes('Revoco') || matName.includes('Mamposteria')) {
+                  child.material.roughness = 0.95;
+                  child.material.metalness = 0.01;
+                }
+              }
+            } else if (m.id === 'mobiliario_plaza') {
+              if (child.material) {
+                child.material.roughness = 0.94;
+                child.material.side = THREE.DoubleSide;
+                const n = child.name || '';
+                if (n.includes('hoja')) {
+                  child.material.color.multiplyScalar(0.72); // Tonos oliva natural
+                }
+              }
             }
           }
         });
@@ -1110,50 +1253,71 @@ export class MequinenzaViewer {
     const dayProgress = (minutes - 420) / (1320 - 420);
     const sunAngle = dayProgress * Math.PI;
 
-    this.sunLight.position.x = Math.cos(sunAngle) * 450;
-    this.sunLight.position.y = Math.max(30, Math.sin(sunAngle) * 550);
-    this.sunLight.position.z = 250 - dayProgress * 150;
+    // Orientar el sol centrando su objetivo en el Poble Vell
+    const targetX = 35;
+    const targetY = 75;
+    const targetZ = 150;
+    if (this.sunLight && this.sunLight.target) {
+      this.sunLight.target.position.set(targetX, targetY, targetZ);
+      this.sunLight.position.set(
+        targetX + Math.cos(sunAngle) * 360,
+        targetY + Math.max(90, Math.sin(sunAngle) * 440),
+        targetZ + 180 - dayProgress * 140
+      );
+    }
 
     if (minutes < 480) {
       // Noche
-      this.renderer.toneMappingExposure = 0.82;
-      this.scene.background.set(0x0c1524);
-      this.scene.fog.color.set(0x0c1524);
-      this.ambientLight.color.set(0x28384d);
-      this.sunLight.color.set(0x426284);
-      this.sunLight.intensity = 0.4;
+      this.renderer.toneMappingExposure = 0.75;
+      this.scene.background.set(0x0a121c);
+      this.scene.fog.color.set(0x0a121c);
+      this.ambientLight.color.set(0x202d3d);
+      this.ambientLight.intensity = 0.2;
+      this.hemiLight.intensity = 0.3;
+      this.sunLight.color.set(0x354e6b);
+      this.sunLight.intensity = 0.25;
     } else if (minutes < 660) {
       // Amanecer dorado
-      this.renderer.toneMappingExposure = 1.15;
-      this.scene.background.set(0x9cb6c9);
-      this.scene.fog.color.set(0x9cb6c9);
-      this.ambientLight.color.set(0xffdfb8);
-      this.sunLight.color.set(0xffba78);
-      this.sunLight.intensity = 2.0;
+      this.renderer.toneMappingExposure = 0.96;
+      this.scene.background.set(0x9caec0);
+      this.scene.fog.color.set(0xb8aa9a);
+      this.ambientLight.color.set(0xffd5a8);
+      this.ambientLight.intensity = 0.22;
+      this.hemiLight.intensity = 0.6;
+      this.hemiLight.color.set(0xc8daf0);
+      this.sunLight.color.set(0xffab62);
+      this.sunLight.intensity = 1.6;
     } else if (minutes < 1140) {
-      // Mediodía radiante
-      this.renderer.toneMappingExposure = 1.08;
-      this.scene.background.set(0xa4c2d6);
-      this.scene.fog.color.set(0xa4c2d6);
-      this.ambientLight.color.set(0xfffaec);
-      this.sunLight.color.set(0xfffaec);
-      this.sunLight.intensity = 2.3;
+      // Mediodía radiante mediterráneo
+      this.renderer.toneMappingExposure = 0.94;
+      this.scene.background.set(0x8faec7);
+      this.scene.fog.color.set(0xc4baa8);
+      this.ambientLight.color.set(0xfff7ea);
+      this.ambientLight.intensity = 0.24;
+      this.hemiLight.intensity = 0.75;
+      this.hemiLight.color.set(0xd4e5f2);
+      this.sunLight.color.set(0xfff4e0);
+      this.sunLight.intensity = 1.75;
     } else if (minutes < 1280) {
-      // Atardecer rojizo
-      this.renderer.toneMappingExposure = 1.25;
-      this.scene.background.set(0xc48c77);
-      this.scene.fog.color.set(0xc48c77);
-      this.ambientLight.color.set(0xff9866);
-      this.sunLight.color.set(0xff6036);
-      this.sunLight.intensity = 1.9;
+      // Atardecer cálido aragonés
+      this.renderer.toneMappingExposure = 0.98;
+      this.scene.background.set(0xb3826f);
+      this.scene.fog.color.set(0xb87f6b);
+      this.ambientLight.color.set(0xff8850);
+      this.ambientLight.intensity = 0.22;
+      this.hemiLight.intensity = 0.6;
+      this.sunLight.color.set(0xff5a2e);
+      this.sunLight.intensity = 1.65;
     } else {
       // Noche cerrada
-      this.renderer.toneMappingExposure = 0.78;
-      this.scene.background.set(0x08101c);
-      this.scene.fog.color.set(0x08101c);
-      this.ambientLight.color.set(0x1d2c3e);
-      this.sunLight.color.set(0x2c4562);
-      this.sunLight.intensity = 0.35;
+      this.renderer.toneMappingExposure = 0.72;
+      this.scene.background.set(0x060c14);
+      this.scene.fog.color.set(0x060c14);
+      this.ambientLight.color.set(0x182432);
+      this.ambientLight.intensity = 0.18;
+      this.hemiLight.intensity = 0.25;
+      this.sunLight.color.set(0x22364c);
+      this.sunLight.intensity = 0.2;
     }
   }
 
