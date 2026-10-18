@@ -171,8 +171,36 @@
       </button>
     </aside>
 
-    <!-- Bottom Dock: Controls (Time of Day, Names, Day Passing, Fullscreen) -->
+    <!-- Bottom Dock: Controls (Perspective, Time of Day, Names, Day Passing, Fullscreen) -->
     <footer class="bottom-dock">
+      <!-- Perspective Mode Floating Pill (Aérea vs Calle vs Composición) -->
+      <div class="view-perspective-selector glass-panel interactive" id="perspective-selector-bar">
+        <button class="perspective-btn active" id="btn-view-aerial" title="Vista aérea global y navegación libre">
+          <span class="p-icon">🌐</span>
+          <span>Aérea</span>
+        </button>
+        <button class="perspective-btn" id="btn-view-street" title="Bajar a pie de calle (escala humana peatonal con adoquinado y llaüts)">
+          <span class="p-icon">🚶</span>
+          <span>A pie de calle</span>
+        </button>
+        <button class="perspective-btn btn-blend-highlight" id="btn-view-blend" title="Alinear 3D y componer con la fotografía histórica original de archivo">
+          <span class="p-icon">📷</span>
+          <span>Foto de época</span>
+        </button>
+      </div>
+
+      <!-- Quick Street Jump Bar (Activo al pasear a pie de calle) -->
+      <div class="street-quick-select-bar glass-panel interactive" id="street-quick-select-bar" style="display:none;">
+        <span class="street-bar-label">🚶 Calles:</span>
+        <button class="street-chip-btn" data-street-wp="wp_placa">Plaça d'Armes</button>
+        <button class="street-chip-btn" data-street-wp="wp_bar_sport">Bar Sport</button>
+        <button class="street-chip-btn" data-street-wp="wp_carrer_major_in">Carrer Major</button>
+        <button class="street-chip-btn" data-street-wp="wp_esglesia">Placeta Missa</button>
+        <button class="street-chip-btn" data-street-wp="wp_lo_muro">Lo Muro & Llaüts</button>
+        <button class="street-chip-btn" data-street-wp="wp_saragossa">Carrer Saragossa</button>
+        <button class="street-chip-btn" data-street-wp="wp_ca_la_vila">Ca la Vila</button>
+      </div>
+
       <div class="dock-panel glass-panel interactive">
         <button class="dock-btn mobile-sidebar-toggle" id="visor-sidebar-toggle-btn" title="Ver lugares y modos del Poble Vell">
           <span>📍</span>
@@ -210,6 +238,47 @@
 
   </div>
 
+  <!-- Historical Photo Composition Overlay (Photo Blend & Split Wipe HUD) -->
+  <div class="photo-blend-hud glass-panel interactive" id="photo-blend-hud">
+    <div class="blend-hud-header">
+      <div class="blend-header-info">
+        <div class="blend-badge" id="blend-photo-year">Archivo Histórico Municipal · Año 1958</div>
+        <h3 class="blend-title" id="blend-photo-title">Plaça d'Armes y Fachada Norte</h3>
+        <p class="blend-sub" id="blend-photo-sub">Perspectiva, posición y lente 3D calibradas con la fotografía original</p>
+      </div>
+      <button class="blend-close-btn" id="blend-hud-close-btn" title="Cerrar composición (Esc)">✕</button>
+    </div>
+
+    <!-- Viewport Frame with Real Historical Photograph Overlay -->
+    <div class="photo-blend-viewport-frame" id="photo-blend-viewport-frame">
+      <img id="blend-photo-img" class="blend-photo-overlay" src="assets/ref/pueblo/poble1.jpg" alt="Fotografía histórica de época">
+      <div class="blend-split-divider" id="blend-split-divider" style="display:none;">
+        <div class="split-handle"><span>↔</span></div>
+      </div>
+    </div>
+
+    <!-- Controls Bar -->
+    <div class="blend-controls-bar">
+      <div class="blend-mode-pills">
+        <button class="blend-mode-btn active" id="blend-mode-fade" title="Fundido progresivo de opacidad">🎚️ Fundido</button>
+        <button class="blend-mode-btn" id="blend-mode-split" title="Cortinilla interactiva antes/después">↔ Cortinilla</button>
+      </div>
+
+      <div class="blend-slider-wrap">
+        <span class="blend-label">Modelo 3D</span>
+        <input type="range" id="blend-opacity-slider" min="0" max="100" value="50" class="blend-slider">
+        <span class="blend-label">Foto Original</span>
+        <span class="blend-readout" id="blend-slider-val">50%</span>
+      </div>
+    </div>
+
+    <!-- Identified features in this historic photo -->
+    <div class="blend-features-section">
+      <div class="blend-features-title">Detalles arquitectónicos documentados en la toma:</div>
+      <ul class="blend-features-list" id="blend-features-list"></ul>
+    </div>
+  </div>
+
   <!-- Historical Dossier Side Panel (Right Drawer) -->
   <aside class="dossier-card glass-panel interactive visible" id="historical-dossier-card" aria-label="Ficha histórica">
     <div class="dossier-header">
@@ -222,6 +291,15 @@
 
     <h2 class="dossier-title" id="dossier-title">Panorámica de Mequinenza</h2>
     <p class="dossier-subtitle" id="dossier-subtitle">Confluencia del Ebro y el Segre ("Aiguabarreig")</p>
+
+    <div class="dossier-actions-box" id="dossier-actions-box">
+      <button class="dossier-action-btn street-btn" id="dossier-street-view-btn" title="Bajar a nivel de calle en este lugar">
+        <span>🚶</span> <span>A pie de calle</span>
+      </button>
+      <button class="dossier-action-btn blend-btn" id="dossier-photo-blend-btn" title="Alinear 3D con la foto histórica original">
+        <span>📷</span> <span>Componer con Foto Real</span>
+      </button>
+    </div>
 
     <div class="dossier-content-body">
       <p class="dossier-desc" id="dossier-description">

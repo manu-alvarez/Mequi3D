@@ -23,6 +23,8 @@ export class MequinenzaViewer {
     this.worldGroup = new THREE.Group();
     this.modelsGroup = new THREE.Group();
     this.waterGroup = new THREE.Group();
+    this.llautsGroup = new THREE.Group();
+    this.streetPavementsGroup = new THREE.Group();
 
     // Textures & Materials
     this.textureLoader = new THREE.TextureLoader();
@@ -33,6 +35,14 @@ export class MequinenzaViewer {
     this.embalseMesh = null;
     this.riverMesh = null;
     this.houseMeshes = [];
+
+    // Perspective & Street Mode State
+    this.perspectiveMode = 'aerial'; // 'aerial' | 'street'
+    this.photoBlendActive = false;
+    this.photoBlendMode = 'fade'; // 'fade' | 'split'
+    this.photoBlendValue = 50;
+    this.activePhotoBlend = null;
+    this.streetWaypoints = [];
 
     // Active mode: 'explorar', 'recorridos', 'comparar', 'que-sabemos'
     this.activeMode = 'explorar';
@@ -50,10 +60,12 @@ export class MequinenzaViewer {
     this.camEndPos = new THREE.Vector3();
     this.targetStartPos = new THREE.Vector3();
     this.targetEndPos = new THREE.Vector3();
+    this.fovStart = 45;
+    this.fovEnd = 45;
     this.camAnimStartTime = 0;
     this.camAnimDuration = 1800; // ms
 
-    // Authentic Landmark Data matching poblevell.es coordinates
+    // Authentic Landmark Data with Aerial and Street-Level Photographic Alignments
     this.landmarks = {
       overview: {
         id: 'overview',
@@ -65,6 +77,8 @@ export class MequinenzaViewer {
         evidenceSource: 'IGN 1956 · Archivo Municipal de Mequinenza',
         camPos: new THREE.Vector3(170, 310, 420),
         targetPos: new THREE.Vector3(15, 75, 140),
+        aerialCam: { pos: new THREE.Vector3(170, 310, 420), target: new THREE.Vector3(15, 75, 140), fov: 45 },
+        streetCam: { pos: new THREE.Vector3(105, 95, 230), target: new THREE.Vector3(40, 75, 150), fov: 55 },
         thumb: 'assets/ref/wikimedia/castillo/castillo_vista_general.jpg',
         desc: 'Reconstrucción histórica en 3D del Poble Vell de Mequinenza, el Castillo medieval y la confluencia fluvial de los ríos Ebro y Segre antes del anegamiento por el embalse de Riba-roja en 1970.',
         historyFact: 'Identificada por Julio César como "Octogesa" en su De Bello Civili (49 a.C.). Durante más de dos mil años fue la llave estratégica del control del comercio y transporte fluvial de la Corona de Aragón.',
@@ -74,7 +88,22 @@ export class MequinenzaViewer {
           'assets/ref/generals/generals2.jpg',
           'assets/ref/generals/generals4.jpg',
           'assets/ref/generals/generals11.jpg'
-        ]
+        ],
+        photoMatch: {
+          src: 'assets/ref/generals/generals1.jpg',
+          year: '1963',
+          title: 'Panorámica del Poble Vell desde el río Segre',
+          subtitle: 'Vista de conjunto con el Castillo de los Moncada y la trama urbana',
+          camPos: new THREE.Vector3(185, 160, 360),
+          targetPos: new THREE.Vector3(25, 80, 150),
+          fov: 48,
+          features: [
+            'Confluencia fluvial del Segre y el Ebro ("Aiguabarreig")',
+            'Casas escalonadas de piedra caliza sobre la ladera',
+            'Castillo dominando sobre el escarpe rocoso a 185 m',
+            'Pretil de sillería de Lo Muro junto al cauce'
+          ]
+        }
       },
       pueblo: {
         id: 'pueblo',
@@ -87,6 +116,8 @@ export class MequinenzaViewer {
         pinPos: new THREE.Vector3(40, 90, 150),
         camPos: new THREE.Vector3(95, 195, 290),
         targetPos: new THREE.Vector3(40, 80, 150),
+        aerialCam: { pos: new THREE.Vector3(95, 195, 290), target: new THREE.Vector3(40, 80, 150), fov: 45 },
+        streetCam: { pos: new THREE.Vector3(38.0, 78.5, 155.0), target: new THREE.Vector3(12.0, 79.0, 142.0), fov: 55 },
         thumb: 'assets/ref/pueblo/poble1.jpg',
         desc: 'El núcleo urbano tradicional de casas de piedra caliza, callejones empinados ("carrerons"), balcones de hierro forjado y porches, escalonado sobre la colina entre el castillo y el río Ebro antes de ser sumergido.',
         historyFact: 'Cuna del insigne escritor Jesús Moncada, quien inmortalizó a sus barqueros, sirgadores, mineros y la vida del pueblo viejo en su obra cumbre de la literatura contemporánea "Camí de sirga".',
@@ -98,7 +129,22 @@ export class MequinenzaViewer {
           'assets/ref/pueblo/poble5.jpg',
           'assets/ref/pueblo/poble6.jpg',
           'assets/ref/pueblo/poble7.jpg'
-        ]
+        ],
+        photoMatch: {
+          src: 'assets/ref/pueblo/poble1.jpg',
+          year: '1958',
+          title: 'El corazón del Poble Vell: Plaça d\'Armes',
+          subtitle: 'Vida cotidiana, tertulias y fachadas tradicionales',
+          camPos: new THREE.Vector3(-3.5, 76.5, 172.0),
+          targetPos: new THREE.Vector3(-1.0, 78.0, 142.0),
+          fov: 55,
+          features: [
+            'Fachada porticada con arcadas de piedra de sillería',
+            'Bar Sport en los bajos con mesas de terraza y persianas de tablillas',
+            'Balcones de hierro forjado con contraventanas de madera',
+            'Pavimento tradicional de canto rodado'
+          ]
+        }
       },
       castillo: {
         id: 'castillo',
@@ -111,6 +157,8 @@ export class MequinenzaViewer {
         pinPos: new THREE.Vector3(-12, 255, -249),
         camPos: new THREE.Vector3(130, 330, -80),
         targetPos: new THREE.Vector3(-12, 245, -249.4),
+        aerialCam: { pos: new THREE.Vector3(130, 330, -80), target: new THREE.Vector3(-12, 245, -249.4), fov: 45 },
+        streetCam: { pos: new THREE.Vector3(-8.0, 248.0, -235.0), target: new THREE.Vector3(-12.0, 252.0, -250.0), fov: 60 },
         thumb: 'assets/ref/castillo/castell3.jpg',
         desc: 'Fortaleza medieval erigida sobre el farallón rocoso calizo tras la reconquista de Ramón Berenguer IV en 1149. Conserva sus cuatro torres (Homenaje, Confluencia, Armas y Portal), el patio de armas con arcos góticos y el salón noble con vistas a la confluencia.',
         historyFact: 'En 1810, durante la Guerra de la Independencia, 1.200 defensores resistieron el asedio del General francés Suchet. Su heroica resistencia fue tan admirada por Napoleón que ordenó inscribir el nombre de MEQUINENZA en el Arco de Triunfo de París.',
@@ -121,19 +169,36 @@ export class MequinenzaViewer {
           'assets/ref/castillo/castell4.jpg',
           'assets/ref/wikimedia/castillo/castillo_zm.jpg',
           'assets/ref/wikimedia/castillo/castillo_vista_general.jpg'
-        ]
+        ],
+        photoMatch: {
+          src: 'assets/ref/castillo/castell3.jpg',
+          year: '1950',
+          title: 'Patio de Armas y Almenas del Castillo',
+          subtitle: 'Arquitectura militar defensiva de la Corona de Aragón',
+          camPos: new THREE.Vector3(-8.0, 248.0, -235.0),
+          targetPos: new THREE.Vector3(-12.0, 252.0, -250.0),
+          fov: 60,
+          features: [
+            'Torre del Homenaje con muros de sillería de 2 metros de espesor',
+            'Patio interior con arcadas góticas apuntadas',
+            'Almenas defensivas y saeteras orientadas al paso del Ebro',
+            'Vista aérea ininterrumpida de todo el valle'
+          ]
+        }
       },
       placa_armes: {
         id: 'placa_armes',
         title: 'Plaça d\'Armes (Plaza de Armas)',
         subtitle: 'El epicentro social del Poble Vell',
         era: 'Siglos XIX - XX',
-        altitude: '92 m',
+        altitude: '76 m',
         evidence: 'Documentado',
         evidenceSource: 'Fototeca Municipal · Foto MUNI_plaza_512',
         pinPos: new THREE.Vector3(-5, 80, 168),
         camPos: new THREE.Vector3(-18, 98, 225),
         targetPos: new THREE.Vector3(-5, 76, 168),
+        aerialCam: { pos: new THREE.Vector3(-18, 98, 225), target: new THREE.Vector3(-5, 76, 168), fov: 45 },
+        streetCam: { pos: new THREE.Vector3(-3.5, 76.5, 172.0), target: new THREE.Vector3(-1.0, 78.0, 142.0), fov: 55 },
         thumb: 'assets/ref/pueblo/poble1.jpg',
         desc: 'La plaza central donde se encontraban el Bar Sport, bancos de madera, caserones señoriales con portales de arco de piedra y desde donde se divisaba la cúpula y el campanario de la iglesia.',
         historyFact: 'Lugar de tertulias de mineros y barqueros, bailes populares y pregones. El caserón del portal de arco tenía una planta de 277 m² y 3 alturas con tejado a cuatro aguas.',
@@ -143,19 +208,36 @@ export class MequinenzaViewer {
           'assets/ref/pueblo/poble20.jpg',
           'assets/ref/pueblo/poble26.jpg',
           'assets/ref/festes/festes1.jpg'
-        ]
+        ],
+        photoMatch: {
+          src: 'assets/ref/pueblo/poble1.jpg',
+          year: '1958',
+          title: 'Plaça d\'Armes y Fachada Norte',
+          subtitle: 'Ángulo exacto desde la esquina sur mirando al Bar Sport',
+          camPos: new THREE.Vector3(-3.5, 76.5, 172.0),
+          targetPos: new THREE.Vector3(-1.0, 78.0, 142.0),
+          fov: 55,
+          features: [
+            'Bar Sport en los bajos con persianas de madera y mesas de café',
+            'Pórtico de piedra de sillería con arcadas de paso',
+            'Balcones de hierro forjado con tiestos y contraventanas',
+            'Pavimento tradicional de canto rodado'
+          ]
+        }
       },
       esglesia: {
         id: 'esglesia',
         title: 'Placeta Missa y l\'Església',
         subtitle: 'Iglesia Parroquial de Nuestra Señora de la Asunción',
         era: 'Siglos XVI - XVIII',
-        altitude: '105 m',
+        altitude: '85 m',
         evidence: 'Documentado',
         evidenceSource: 'Archivo Parroquial · 39 fotografías catalogadas',
         pinPos: new THREE.Vector3(88, 85, 138),
         camPos: new THREE.Vector3(75, 125, 205),
         targetPos: new THREE.Vector3(88, 76, 138),
+        aerialCam: { pos: new THREE.Vector3(75, 125, 205), target: new THREE.Vector3(88, 76, 138), fov: 45 },
+        streetCam: { pos: new THREE.Vector3(80.0, 77.2, 155.0), target: new THREE.Vector3(88.0, 86.0, 136.0), fov: 60 },
         thumb: 'assets/ref/esglesia/esglesia1.jpg',
         desc: 'Templo parroquial de sillería de piedra caliza con torre campanario cuadrada dominando la placeta, gran nave central, coro alto y capillas de cofradías de barqueros y mineros.',
         historyFact: 'Escenario de intensos combates durante la Guerra Civil en la Batalla del Ebro de 1938. Sus campanas marcaban el ritmo de las salidas de los Llaüts y turnos de las minas.',
@@ -166,19 +248,36 @@ export class MequinenzaViewer {
           'assets/ref/esglesia/esglesia4.jpg',
           'assets/ref/esglesia/esglesia15.jpg',
           'assets/ref/esglesia/esglesia20.jpg'
-        ]
+        ],
+        photoMatch: {
+          src: 'assets/ref/esglesia/esglesia1.jpg',
+          year: '1955',
+          title: 'Placeta Missa y Campanario de la Asunción',
+          subtitle: 'Perspectiva peatonal desde la escalinata barroca',
+          camPos: new THREE.Vector3(80.0, 77.2, 155.0),
+          targetPos: new THREE.Vector3(88.0, 86.0, 136.0),
+          fov: 60,
+          features: [
+            'Torre campanario cuadrada de sillería de piedra caliza',
+            'Escalinata de acceso donde se reunían las cofradías',
+            'Portada de medio punto con remate escultórico',
+            'Vista hacia los escarpes que ascienden al castillo'
+          ]
+        }
       },
       carrer_major: {
         id: 'carrer_major',
         title: 'Carrer Major (Calle Mayor)',
         subtitle: 'La arteria comercial y residencial principal',
         era: 'Siglos XVIII - XX',
-        altitude: '90 m',
+        altitude: '80 m',
         evidence: 'Documentado',
         evidenceSource: 'Plano Parcelario ENHER · 13 casas catalogadas',
         pinPos: new THREE.Vector3(167.8, 85, 120.5),
         camPos: new THREE.Vector3(175, 130, 185),
         targetPos: new THREE.Vector3(167.8, 80, 120.5),
+        aerialCam: { pos: new THREE.Vector3(175, 130, 185), target: new THREE.Vector3(167.8, 80, 120.5), fov: 45 },
+        streetCam: { pos: new THREE.Vector3(172.5, 80.5, 138.0), target: new THREE.Vector3(167.0, 81.5, 110.0), fov: 50 },
         thumb: 'assets/ref/pueblo/poble2.jpg',
         desc: 'Calle empedrada flanqueada por comercios, ultramarinos, barberías y talleres artesanales que comunicaba el corazón del pueblo con el camino hacia la comarca del Segre.',
         historyFact: 'Por ella discurrían las procesiones de Santa Agatoclia y el bullicio de los días de mercado con carros cargados de productos de la huerta del Ebro.',
@@ -188,7 +287,22 @@ export class MequinenzaViewer {
           'assets/ref/pueblo/poble11.jpg',
           'assets/ref/pueblo/poble19.jpg',
           'assets/ref/pueblo/poble25.jpg'
-        ]
+        ],
+        photoMatch: {
+          src: 'assets/ref/pueblo/poble2.jpg',
+          year: '1962',
+          title: 'Carrer Major: Eje comercial y vecinal',
+          subtitle: 'Perspectiva histórica a pie de calle con comercios y farolas',
+          camPos: new THREE.Vector3(172.5, 80.5, 138.0),
+          targetPos: new THREE.Vector3(167.0, 81.5, 110.0),
+          fov: 50,
+          features: [
+            'Comercios con toldos de lona y rótulos pintados a mano',
+            'Alineación de 13 casas señoriales de tres alturas',
+            'Farolas de brazo de hierro fundido ancladas en fachada',
+            'Escalones de piedra en los portales para evitar aguas de escorrentía'
+          ]
+        }
       },
       ca_la_vila: {
         id: 'ca_la_vila',
@@ -201,6 +315,8 @@ export class MequinenzaViewer {
         pinPos: new THREE.Vector3(189.9, 78, 108.5),
         camPos: new THREE.Vector3(205, 115, 155),
         targetPos: new THREE.Vector3(189.9, 75, 108.5),
+        aerialCam: { pos: new THREE.Vector3(205, 115, 155), target: new THREE.Vector3(189.9, 75, 108.5), fov: 45 },
+        streetCam: { pos: new THREE.Vector3(198.0, 76.5, 122.0), target: new THREE.Vector3(188.0, 77.0, 102.0), fov: 55 },
         thumb: 'assets/ref/ajuntament/ajuntament1.jpg',
         desc: 'Edificio consistorial de piedra con balconada oficial, reloj y salón de plenos donde se gestionaba la vida política, las licencias de sirga, las minas y la vida comunitaria.',
         historyFact: 'En sus dependencias se guardaron los libros de actas y los padrones que sirvieron para organizar el traslado ordenado de la población hacia el "Pueblo Nuevo".',
@@ -210,19 +326,36 @@ export class MequinenzaViewer {
           'assets/ref/ajuntament/ajuntament5.jpg',
           'assets/ref/ajuntament/ajuntament7.jpg',
           'assets/ref/ajuntament/ajuntament9.jpg'
-        ]
+        ],
+        photoMatch: {
+          src: 'assets/ref/ajuntament/ajuntament1.jpg',
+          year: '1960',
+          title: 'Casa de la Vila (Ayuntamiento Histórico)',
+          subtitle: 'Fachada con balconada consistorial y porches',
+          camPos: new THREE.Vector3(198.0, 76.5, 122.0),
+          targetPos: new THREE.Vector3(188.0, 77.0, 102.0),
+          fov: 55,
+          features: [
+            'Edificio noble de sillería y arquería en planta baja',
+            'Balcón consistorial para pregones y celebraciones',
+            'Reloj municipal y campana de aviso',
+            'Mirador abierto hacia el cauce del Ebro'
+          ]
+        }
       },
       carrer_saragossa: {
         id: 'carrer_saragossa',
         title: 'Carrer Saragossa (Calle Zaragoza)',
         subtitle: 'Calle histórica residencial con 53 casas',
         era: 'Siglos XIX - XX',
-        altitude: '95 m',
+        altitude: '78 m',
         evidence: 'Documentado',
         evidenceSource: 'Plano Parcelario y Padrón de 1965 (53 casas)',
         pinPos: new THREE.Vector3(-75, 80, 175),
         camPos: new THREE.Vector3(-145, 128, 220),
         targetPos: new THREE.Vector3(-75, 76, 175),
+        aerialCam: { pos: new THREE.Vector3(-145, 128, 220), target: new THREE.Vector3(-75, 76, 175), fov: 45 },
+        streetCam: { pos: new THREE.Vector3(-65.0, 78.0, 185.0), target: new THREE.Vector3(-85.0, 83.5, 165.0), fov: 55 },
         thumb: 'assets/ref/pueblo/poble3.jpg',
         desc: 'Una de las calles más pobladas del casco histórico, con 53 casas alineadas en pendiente. Sus portales de medio punto y bodegas de piedra albergaban a numerosas familias mineras.',
         historyFact: 'Esta calle concentraba talleres de carpintería de ribera, almacenes de aperos y varias tabernas frecuentadas por los sirgadores que trabajaban en el río.',
@@ -232,7 +365,22 @@ export class MequinenzaViewer {
           'assets/ref/pueblo/poble14.jpg',
           'assets/ref/pueblo/poble22.jpg',
           'assets/ref/pueblo/poble30.jpg'
-        ]
+        ],
+        photoMatch: {
+          src: 'assets/ref/pueblo/poble3.jpg',
+          year: '1964',
+          title: 'Carrer Saragossa y Baixada de l\'Abeurador',
+          subtitle: 'Perspectiva peatonal del callejón escalonado',
+          camPos: new THREE.Vector3(-65.0, 78.0, 185.0),
+          targetPos: new THREE.Vector3(-85.0, 83.5, 165.0),
+          fov: 55,
+          features: [
+            'Callejón con tramos escalonados adaptados a la ladera',
+            'Casas de mineros y sirgadores con bodegas frescas',
+            'Portales en arco y ventanas con rejería tradicional',
+            'Conexión directa con la senda del Castillo'
+          ]
+        }
       },
       lo_muro: {
         id: 'lo_muro',
@@ -245,6 +393,8 @@ export class MequinenzaViewer {
         pinPos: new THREE.Vector3(75, 72, 185),
         camPos: new THREE.Vector3(110, 92, 240),
         targetPos: new THREE.Vector3(75, 68, 185),
+        aerialCam: { pos: new THREE.Vector3(110, 92, 240), target: new THREE.Vector3(75, 68, 185), fov: 45 },
+        streetCam: { pos: new THREE.Vector3(84.0, 70.0, 195.0), target: new THREE.Vector3(42.0, 69.5, 185.0), fov: 55 },
         thumb: 'assets/ref/generals/generals1.jpg',
         desc: 'Monumento y paseo singular de Mequinenza: pretil de dos hiladas de grandes bloques de piedra labrada, albardilla y repisa hacia el agua, que protegía el pueblo de las crecidas del Ebro.',
         historyFact: 'Lugar de recreo ineludible donde los mequinenzanos paseaban al atardecer observando el tráfico de barcazas de carbón y las maniobras de amarre.',
@@ -253,7 +403,22 @@ export class MequinenzaViewer {
           'assets/ref/generals/generals3.jpg',
           'assets/ref/llauts/llauts1.jpg',
           'assets/ref/llauts/llauts2.jpg'
-        ]
+        ],
+        photoMatch: {
+          src: 'assets/ref/llauts/llauts1.jpg',
+          year: '1959',
+          title: 'Lo Muro y los Llaüts en el Río Ebro',
+          subtitle: 'Barcazas tradicionales cargadas de lignito junto al pretil',
+          camPos: new THREE.Vector3(84.0, 70.0, 195.0),
+          targetPos: new THREE.Vector3(42.0, 69.5, 185.0),
+          fov: 55,
+          features: [
+            'Pretil de sillería de dos hiladas de piedra caliza labrada',
+            'Llaüts amarrados con maromas de cáñamo a las argollas',
+            'Embarcadero y rampa de sirga hacia la confluencia fluvial',
+            'Paseo arbolado y vistas a la ribera del Ebro'
+          ]
+        }
       },
       llauts: {
         id: 'llauts',
@@ -266,6 +431,8 @@ export class MequinenzaViewer {
         pinPos: new THREE.Vector3(45, 66, 195),
         camPos: new THREE.Vector3(65, 80, 235),
         targetPos: new THREE.Vector3(45, 65, 195),
+        aerialCam: { pos: new THREE.Vector3(65, 80, 235), target: new THREE.Vector3(45, 65, 195), fov: 45 },
+        streetCam: { pos: new THREE.Vector3(62.0, 69.0, 198.0), target: new THREE.Vector3(45.0, 65.0, 195.0), fov: 55 },
         thumb: 'assets/ref/llauts/llauts1.jpg',
         desc: 'Las emblemáticas embarcaciones tradicionales de madera de Mequinenza, de hasta 30 metros de eslora y 30 toneladas de carga, que transportaban el carbón río abajo hacia el Mediterráneo.',
         historyFact: 'El regreso a contracorriente se realizaba a pie remolcando el barco con maromas desde la orilla: el camino de sirga ("camí de sirga"), hazaña heroica de los barqueros mequinenzanos.',
@@ -275,7 +442,22 @@ export class MequinenzaViewer {
           'assets/ref/llauts/llauts3.jpg',
           'assets/ref/llauts/llauts4.jpg',
           'assets/ref/llauts/llauts5.jpg'
-        ]
+        ],
+        photoMatch: {
+          src: 'assets/ref/llauts/llauts2.jpg',
+          year: '1955',
+          title: 'Sirgadores remolcando el Llaüt río arriba',
+          subtitle: 'El esfuerzo épico del Camí de Sirga',
+          camPos: new THREE.Vector3(62.0, 69.0, 198.0),
+          targetPos: new THREE.Vector3(45.0, 65.0, 195.0),
+          fov: 55,
+          features: [
+            'Embarcación de madera de pino y roble del país con proa curvada',
+            'Bodega abierta con cargamento de carbón de lignito',
+            'Maroma de cáñamo atada al mástil para el tiro desde la orilla',
+            'Maniobras de remo en las corrientes del río Ebro'
+          ]
+        }
       },
       pont_segre: {
         id: 'pont_segre',
@@ -288,6 +470,8 @@ export class MequinenzaViewer {
         pinPos: new THREE.Vector3(397, 72, -87),
         camPos: new THREE.Vector3(355, 125, 50),
         targetPos: new THREE.Vector3(397, 66, -87),
+        aerialCam: { pos: new THREE.Vector3(355, 125, 50), target: new THREE.Vector3(397, 66, -87), fov: 45 },
+        streetCam: { pos: new THREE.Vector3(368.0, 72.5, 15.0), target: new THREE.Vector3(397.0, 71.0, -87.0), fov: 55 },
         thumb: 'assets/ref/generals/generals4.jpg',
         desc: 'Viaducto de arcos de piedra y tramos metálicos que cruzaba el curso del río Segre en su desembocadura al Ebro, conectando la villa con Lérida y el ferrocarril.',
         historyFact: 'Dinamitado durante los combates de la Batalla del Ebro en 1938 para frenar el avance bélico y reconstruido posteriormente por su vital importancia logística.',
@@ -296,7 +480,21 @@ export class MequinenzaViewer {
           'assets/ref/generals/generals11.jpg',
           'assets/ref/generals/generals18.jpg',
           'assets/ref/generals/generals25.jpg'
-        ]
+        ],
+        photoMatch: {
+          src: 'assets/ref/generals/generals4.jpg',
+          year: '1952',
+          title: 'Viaducto del Segre y Confluencia',
+          subtitle: 'Perspectiva peatonal hacia el pueblo y el castillo',
+          camPos: new THREE.Vector3(368.0, 72.5, 15.0),
+          targetPos: new THREE.Vector3(397.0, 71.0, -87.0),
+          fov: 55,
+          features: [
+            'Arcos de piedra y tablero de paso',
+            'Punto de confluencia de las aguas verdosas del Segre con el Ebro',
+            'Perspectiva del pueblo y castillo alzándose sobre la ribera'
+          ]
+        }
       },
       colegio: {
         id: 'colegio',
@@ -309,6 +507,8 @@ export class MequinenzaViewer {
         pinPos: new THREE.Vector3(-342, 92, 160),
         camPos: new THREE.Vector3(-270, 118, 250),
         targetPos: new THREE.Vector3(-342, 88, 160),
+        aerialCam: { pos: new THREE.Vector3(-270, 118, 250), target: new THREE.Vector3(-342, 88, 160), fov: 45 },
+        streetCam: { pos: new THREE.Vector3(-315.0, 89.5, 175.0), target: new THREE.Vector3(-342.0, 91.0, 160.0), fov: 55 },
         thumb: 'assets/ref/elements/elements1.jpg',
         desc: 'Magnífico edificio escolar de estilo novecentista aragonés promovido por la benefactora mequinenzana María Quintana. Por su cota de altura, se salvó del nivel de las aguas del embalse.',
         historyFact: 'Hoy alberga los prestigiosos Museos de Mequinenza (Museo de la Mina, Museo de la Historia y Museo del Pasado Prehistórico).',
@@ -317,7 +517,21 @@ export class MequinenzaViewer {
           'assets/ref/elements/elements2.jpg',
           'assets/ref/pueblo/poble10.jpg',
           'assets/ref/competicions/competicions1.jpg'
-        ]
+        ],
+        photoMatch: {
+          src: 'assets/ref/elements/elements1.jpg',
+          year: '1930',
+          title: 'Fachada Principal del Grupo Escolar',
+          subtitle: 'Arquitectura novecentista de Manuel de Goytia',
+          camPos: new THREE.Vector3(-315.0, 89.5, 175.0),
+          targetPos: new THREE.Vector3(-342.0, 91.0, 160.0),
+          fov: 55,
+          features: [
+            'Pabellón central con alero tallado de madera',
+            'Grandes ventanales para iluminación natural de aulas',
+            'Patio de recreo arbolado y escalinata de acceso'
+          ]
+        }
       },
       cenital: {
         id: 'cenital',
@@ -329,6 +543,7 @@ export class MequinenzaViewer {
         evidenceSource: 'Vuelo americano 1956 IGN · Plano maestro del proyecto',
         camPos: new THREE.Vector3(0, 1350, 1),
         targetPos: new THREE.Vector3(0, 100, 0),
+        aerialCam: { pos: new THREE.Vector3(0, 1350, 1), target: new THREE.Vector3(0, 100, 0), fov: 45 },
         thumb: 'assets/texturas/orto_1956.jpg',
         desc: 'Vista aérea vertical orientada al norte para examinar la trama urbana completa, las manzanas, la confluencia de los ríos y el relieve topográfico.',
         historyFact: 'El vuelo fotogramétrico de 1956 del Ejército de los Estados Unidos (IGN) permitió mapear con precisión métrica la planta de las 775 casas de Mequinenza antes de su demolición.',
@@ -378,6 +593,11 @@ export class MequinenzaViewer {
 
     // Cargar modelos GLTF reales de Mequinenza
     await this.loadRealGLBModels();
+
+    // Composición enriquecida de las calles con fotos históricas como referencia
+    this.createHistoricLlauts();
+    this.createStreetPavements();
+    this.createStreetWaypoints();
   }
 
   setupScene() {
@@ -388,6 +608,8 @@ export class MequinenzaViewer {
     this.scene.add(this.worldGroup);
     this.worldGroup.add(this.modelsGroup);
     this.worldGroup.add(this.waterGroup);
+    this.worldGroup.add(this.llautsGroup);
+    this.worldGroup.add(this.streetPavementsGroup);
   }
 
   setupCamera() {
@@ -628,8 +850,190 @@ export class MequinenzaViewer {
   }
 
   /* ========================================================================
-     PUNTOS HISTÓRICOS 3D EN EL MAPA
+     DETALLES HISTÓRICOS A RAS DE SUELO (Llaüts en Lo Muro y Empedrado de Calles)
      ======================================================================== */
+  createHistoricLlauts() {
+    this.llautsGroup.clear();
+
+    const woodMat = new THREE.MeshStandardMaterial({
+      color: 0x3d291a,
+      roughness: 0.85,
+      metalness: 0.05
+    });
+
+    const gunwaleMat = new THREE.MeshStandardMaterial({
+      color: 0x22170e,
+      roughness: 0.9,
+      metalness: 0.1
+    });
+
+    const coalMat = new THREE.MeshStandardMaterial({
+      color: 0x141414,
+      roughness: 0.96,
+      metalness: 0.15
+    });
+
+    const ropeMat = new THREE.LineBasicMaterial({
+      color: 0xc4b28c,
+      linewidth: 2
+    });
+
+    const buildLlaut = (name, x, y, z, rotY, scale = 1) => {
+      const llaut = new THREE.Group();
+      llaut.name = `llaut_${name}`;
+
+      // 1. Casco de madera con doble proa tradicional curvada
+      const hullGeo = new THREE.BoxGeometry(16 * scale, 1.8 * scale, 3.8 * scale, 8, 2, 4);
+      const posAttr = hullGeo.attributes.position;
+      for (let i = 0; i < posAttr.count; i++) {
+        const vx = posAttr.getX(i);
+        const vy = posAttr.getY(i);
+        const vz = posAttr.getZ(i);
+
+        const factor = 1.0 - Math.min(Math.abs(vx) / (8 * scale), 0.85);
+        posAttr.setZ(i, vz * factor);
+
+        if (Math.abs(vx) > 5 * scale) {
+          posAttr.setY(i, vy + Math.pow((Math.abs(vx) - 5 * scale) / 3, 2) * 0.45);
+        }
+      }
+      hullGeo.computeVertexNormals();
+
+      const hullMesh = new THREE.Mesh(hullGeo, woodMat);
+      hullMesh.castShadow = true;
+      hullMesh.receiveShadow = true;
+      llaut.add(hullMesh);
+
+      // 2. Borda superior de refuerzo
+      const rimGeo = new THREE.BoxGeometry(16.2 * scale, 0.25 * scale, 3.9 * scale);
+      const rimMesh = new THREE.Mesh(rimGeo, gunwaleMat);
+      rimMesh.position.y = 0.9 * scale;
+      llaut.add(rimMesh);
+
+      // 3. Montones de carbón de lignito en la bodega
+      const coalMound1 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.6 * scale, 1), coalMat);
+      coalMound1.position.set(-2 * scale, 0.6 * scale, 0);
+      coalMound1.scale.set(2.2, 0.7, 1.4);
+      coalMound1.castShadow = true;
+      llaut.add(coalMound1);
+
+      const coalMound2 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.4 * scale, 1), coalMat);
+      coalMound2.position.set(2.5 * scale, 0.6 * scale, 0);
+      coalMound2.scale.set(1.8, 0.65, 1.3);
+      coalMound2.castShadow = true;
+      llaut.add(coalMound2);
+
+      // 4. Mástil para la maroma del camí de sirga
+      const mastGeo = new THREE.CylinderGeometry(0.12 * scale, 0.15 * scale, 4.5 * scale, 8);
+      const mastMesh = new THREE.Mesh(mastGeo, gunwaleMat);
+      mastMesh.position.set(-1 * scale, 2.2 * scale, 0);
+      llaut.add(mastMesh);
+
+      // 5. Posicionar sobre el agua junto a Lo Muro
+      llaut.position.set(x, y, z);
+      llaut.rotation.y = rotY;
+      this.llautsGroup.add(llaut);
+
+      // 6. Maroma de amarre hacia el pretil de Lo Muro
+      const ropePoints = [
+        new THREE.Vector3(x, y + 0.8 * scale, z),
+        new THREE.Vector3(x + 5, 68.2, z - 8)
+      ];
+      const ropeGeo = new THREE.BufferGeometry().setFromPoints(ropePoints);
+      const ropeLine = new THREE.Line(ropeGeo, ropeMat);
+      this.llautsGroup.add(ropeLine);
+    };
+
+    // 3 Llaüts emblemáticos documentados en la fototeca amarrados junto a Lo Muro
+    buildLlaut('La_Mequinenzana', 68, 60.4, 196, -0.15, 1.05);
+    buildLlaut('Santa_Agatoclia', 44, 60.4, 191, 0.08, 0.95);
+    buildLlaut('El_Segre', 92, 60.4, 202, -0.25, 1.1);
+  }
+
+  createStreetPavements() {
+    this.streetPavementsGroup.clear();
+
+    // Generar textura procedural de canto rodado tradicional (adoquines de río del Ebro)
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#6e6151';
+    ctx.fillRect(0, 0, 512, 512);
+
+    const stoneColors = ['#9c8f7d', '#b0a390', '#7d7060', '#bfb2a0', '#8a7e6e'];
+    for (let y = 8; y < 512; y += 18) {
+      const offsetX = (y % 36 === 0) ? 9 : 0;
+      for (let x = 8 + offsetX; x < 512; x += 18) {
+        ctx.fillStyle = stoneColors[Math.floor(Math.random() * stoneColors.length)];
+        ctx.beginPath();
+        const rw = 12 + Math.random() * 4;
+        const rh = 10 + Math.random() * 4;
+        ctx.ellipse(x, y, rw / 2, rh / 2, (Math.random() - 0.5) * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#4a3f33';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+    }
+
+    const pavementTex = new THREE.CanvasTexture(canvas);
+    pavementTex.wrapS = THREE.RepeatWrapping;
+    pavementTex.wrapT = THREE.RepeatWrapping;
+    pavementTex.repeat.set(6, 6);
+
+    const pavementMat = new THREE.MeshStandardMaterial({
+      map: pavementTex,
+      roughness: 0.92,
+      metalness: 0.05
+    });
+
+    // 1. Pavimento de la Plaça d'Armes
+    const plazaPave = new THREE.Mesh(new THREE.PlaneGeometry(38, 48), pavementMat);
+    plazaPave.rotation.x = -Math.PI / 2;
+    plazaPave.position.set(-5, 75.25, 166);
+    plazaPave.receiveShadow = true;
+    this.streetPavementsGroup.add(plazaPave);
+
+    // 2. Pavimento del Carrer Major
+    const majorPave = new THREE.Mesh(new THREE.PlaneGeometry(9, 72), pavementMat);
+    majorPave.rotation.x = -Math.PI / 2;
+    majorPave.rotation.z = 0.12;
+    majorPave.position.set(170, 79.55, 126);
+    majorPave.receiveShadow = true;
+    this.streetPavementsGroup.add(majorPave);
+
+    // 3. Paseo de Lo Muro
+    const muroPave = new THREE.Mesh(new THREE.PlaneGeometry(8, 110), pavementMat);
+    muroPave.rotation.x = -Math.PI / 2;
+    muroPave.rotation.z = -0.18;
+    muroPave.position.set(72, 68.25, 186);
+    muroPave.receiveShadow = true;
+    this.streetPavementsGroup.add(muroPave);
+
+    // 4. Callejón empinado de Carrer Saragossa
+    const saragossaPave = new THREE.Mesh(new THREE.PlaneGeometry(7.5, 55), pavementMat);
+    saragossaPave.rotation.x = -Math.PI / 2;
+    saragossaPave.rotation.z = -0.35;
+    saragossaPave.position.set(-72, 77.25, 175);
+    saragossaPave.receiveShadow = true;
+    this.streetPavementsGroup.add(saragossaPave);
+  }
+
+  createStreetWaypoints() {
+    this.streetWaypoints = [
+      { id: 'wp_placa', name: 'Plaça d\'Armes (Centro)', pos: new THREE.Vector3(-3.5, 76.5, 168.0), target: new THREE.Vector3(-1.0, 78.0, 142.0), streetId: 'placa_armes' },
+      { id: 'wp_bar_sport', name: 'Bar Sport y Porche', pos: new THREE.Vector3(10.0, 76.5, 160.0), target: new THREE.Vector3(2.0, 77.5, 155.0), streetId: 'placa_armes' },
+      { id: 'wp_carrer_major_in', name: 'Carrer Major (Entrada comercial)', pos: new THREE.Vector3(172.5, 80.5, 138.0), target: new THREE.Vector3(167.0, 81.5, 110.0), streetId: 'carrer_major' },
+      { id: 'wp_carrer_major_out', name: 'Carrer Major (Salida al Segre)', pos: new THREE.Vector3(166.0, 81.5, 108.0), target: new THREE.Vector3(180.0, 79.0, 90.0), streetId: 'carrer_major' },
+      { id: 'wp_esglesia', name: 'Placeta Missa y Escalinata', pos: new THREE.Vector3(80.0, 77.2, 155.0), target: new THREE.Vector3(88.0, 86.0, 136.0), streetId: 'esglesia' },
+      { id: 'wp_saragossa', name: 'Carrer Saragossa (Bodegas)', pos: new THREE.Vector3(-65.0, 78.0, 185.0), target: new THREE.Vector3(-85.0, 83.5, 165.0), streetId: 'carrer_saragossa' },
+      { id: 'wp_lo_muro', name: 'Lo Muro y Llaüts del Ebro', pos: new THREE.Vector3(84.0, 70.0, 195.0), target: new THREE.Vector3(42.0, 69.5, 185.0), streetId: 'lo_muro' },
+      { id: 'wp_ca_la_vila', name: 'Porches de Ca la Vila', pos: new THREE.Vector3(198.0, 76.5, 122.0), target: new THREE.Vector3(188.0, 77.0, 102.0), streetId: 'ca_la_vila' }
+    ];
+  }
   create3DScreenPins() {
     const pinContainer = document.getElementById('map-pins-layer');
     if (!pinContainer) return;
@@ -778,7 +1182,7 @@ export class MequinenzaViewer {
   }
 
   /* ========================================================================
-     NAVEGACIÓN Y VUELO DE CÁMARA SUAVE
+     NAVEGACIÓN Y VUELO DE CÁMARA SUAVE (Aéreo y A Pie de Calle)
      ======================================================================== */
   selectLandmark(id) {
     const landmark = this.landmarks[id];
@@ -791,23 +1195,190 @@ export class MequinenzaViewer {
       btn.classList.toggle('active', btn.dataset.place === id);
     });
 
+    // Decidir posición de cámara y FOV según el modo de perspectiva activo
+    let camPos = landmark.camPos;
+    let targetPos = landmark.targetPos;
+    let targetFov = 45;
+
+    if (this.perspectiveMode === 'street' && landmark.streetCam) {
+      camPos = landmark.streetCam.pos;
+      targetPos = landmark.streetCam.target;
+      targetFov = landmark.streetCam.fov || 55;
+    } else if (landmark.aerialCam) {
+      camPos = landmark.aerialCam.pos;
+      targetPos = landmark.aerialCam.target;
+      targetFov = landmark.aerialCam.fov || 45;
+    }
+
     // Vuelo suave de cámara
-    if (landmark.camPos && landmark.targetPos) {
-      this.flyCameraTo(landmark.camPos, landmark.targetPos);
+    if (camPos && targetPos) {
+      this.flyCameraTo(camPos, targetPos, 1800, targetFov);
     }
 
     // Actualizar ficha lateral
     this.updateDossierCard(landmark);
   }
 
-  flyCameraTo(targetCamPos, targetControlsPos, duration = 1800) {
+  flyCameraTo(targetCamPos, targetControlsPos, duration = 1800, targetFov = null) {
     this.isAnimatingCamera = true;
     this.camStartPos.copy(this.camera.position);
     this.camEndPos.copy(targetCamPos);
     this.targetStartPos.copy(this.controls.target);
     this.targetEndPos.copy(targetControlsPos);
+    this.fovStart = this.camera.fov;
+    this.fovEnd = targetFov || (this.perspectiveMode === 'street' ? 55 : 45);
     this.camAnimStartTime = performance.now();
     this.camAnimDuration = duration;
+  }
+
+  setPerspectiveMode(mode) {
+    this.perspectiveMode = mode;
+
+    const aerialBtn = document.getElementById('btn-view-aerial');
+    const streetBtn = document.getElementById('btn-view-street');
+    if (aerialBtn) aerialBtn.classList.toggle('active', mode === 'aerial');
+    if (streetBtn) streetBtn.classList.toggle('active', mode === 'street');
+
+    const streetBar = document.getElementById('street-quick-select-bar');
+    if (streetBar) {
+      streetBar.style.display = mode === 'street' ? 'flex' : 'none';
+    }
+
+    if (mode === 'street') {
+      // Ajuste de límites de OrbitControls para una experiencia cómoda a nivel peatonal
+      this.controls.minDistance = 0.5;
+      this.controls.maxDistance = 80;
+      this.controls.maxPolarAngle = Math.PI * 0.54; // Permitir mirar hacia fachadas altas y campanario
+      this.controls.minPolarAngle = Math.PI * 0.12;
+    } else {
+      // Modo aéreo panorámico
+      this.controls.minDistance = 15;
+      this.controls.maxDistance = 850;
+      this.controls.maxPolarAngle = Math.PI * 0.48; // Evitar pasar por debajo del terreno
+      this.controls.minPolarAngle = 0.05;
+    }
+
+    if (this.activeLandmarkId && this.landmarks[this.activeLandmarkId]) {
+      this.selectLandmark(this.activeLandmarkId);
+    }
+  }
+
+  walkToStreetWaypoint(wpId) {
+    const wp = this.streetWaypoints.find(w => w.id === wpId);
+    if (!wp) return;
+
+    this.perspectiveMode = 'street';
+    this.setPerspectiveMode('street');
+
+    if (wp.streetId) {
+      this.activeLandmarkId = wp.streetId;
+      document.querySelectorAll('.nav-item-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.place === wp.streetId);
+      });
+      if (this.landmarks[wp.streetId]) {
+        this.updateDossierCard(this.landmarks[wp.streetId]);
+      }
+    }
+
+    this.flyCameraTo(wp.pos, wp.target, 1600, 58);
+  }
+
+  /* ========================================================================
+     COMPOSICIÓN CON FOTOGRAFÍA HISTÓRICA (Photo Blend & Split-Wipe)
+     ======================================================================== */
+  openPhotoBlend(landmarkId) {
+    const id = landmarkId || this.activeLandmarkId || 'placa_armes';
+    let landmark = this.landmarks[id];
+    if (!landmark || !landmark.photoMatch) {
+      landmark = this.landmarks['placa_armes'];
+    }
+    if (!landmark || !landmark.photoMatch) return;
+
+    const pm = landmark.photoMatch;
+    this.activePhotoBlend = pm;
+    this.photoBlendActive = true;
+
+    // Alinear cámara 3D con la perspectiva y FOV exactos de la foto original
+    this.flyCameraTo(pm.camPos, pm.targetPos, 1400, pm.fov || 55);
+
+    // Contenedor HUD
+    const hud = document.getElementById('photo-blend-hud');
+    if (!hud) return;
+
+    const img = document.getElementById('blend-photo-img');
+    const titleEl = document.getElementById('blend-photo-title');
+    const subEl = document.getElementById('blend-photo-sub');
+    const yearEl = document.getElementById('blend-photo-year');
+    const featuresEl = document.getElementById('blend-features-list');
+
+    if (img) img.src = pm.src;
+    if (titleEl) titleEl.textContent = pm.title;
+    if (subEl) subEl.textContent = pm.subtitle;
+    if (yearEl) yearEl.textContent = `Archivo Histórico · Año ${pm.year}`;
+
+    if (featuresEl) {
+      featuresEl.innerHTML = '';
+      (pm.features || []).forEach(feat => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="feat-bullet">✓</span> ${feat}`;
+        featuresEl.appendChild(li);
+      });
+    }
+
+    // Configurar modo y valor por defecto (50%)
+    this.setPhotoBlendMode(this.photoBlendMode || 'fade');
+    const slider = document.getElementById('blend-opacity-slider');
+    if (slider) slider.value = 50;
+    this.updatePhotoBlendVisual(50);
+
+    hud.classList.add('active');
+  }
+
+  closePhotoBlend() {
+    this.photoBlendActive = false;
+    this.activePhotoBlend = null;
+    const hud = document.getElementById('photo-blend-hud');
+    if (hud) hud.classList.remove('active');
+  }
+
+  setPhotoBlendMode(mode) {
+    this.photoBlendMode = mode;
+    const btnFade = document.getElementById('blend-mode-fade');
+    const btnSplit = document.getElementById('blend-mode-split');
+    const frame = document.getElementById('photo-blend-viewport-frame');
+
+    if (btnFade) btnFade.classList.toggle('active', mode === 'fade');
+    if (btnSplit) btnSplit.classList.toggle('active', mode === 'split');
+    if (frame) frame.classList.toggle('split-mode', mode === 'split');
+
+    this.updatePhotoBlendVisual(this.photoBlendValue || 50);
+  }
+
+  updatePhotoBlendVisual(val) {
+    this.photoBlendValue = val;
+    const sliderVal = document.getElementById('blend-slider-val');
+    const photoImg = document.getElementById('blend-photo-img');
+    const divider = document.getElementById('blend-split-divider');
+
+    if (sliderVal) sliderVal.textContent = `${val}%`;
+
+    if (this.photoBlendMode === 'fade') {
+      if (photoImg) {
+        photoImg.style.opacity = (val / 100).toString();
+        photoImg.style.clipPath = 'none';
+      }
+      if (divider) divider.style.display = 'none';
+    } else {
+      // Split Wipe Mode
+      if (photoImg) {
+        photoImg.style.opacity = '1';
+        photoImg.style.clipPath = `polygon(0 0, ${val}% 0, ${val}% 100%, 0 100%)`;
+      }
+      if (divider) {
+        divider.style.display = 'block';
+        divider.style.left = `${val}%`;
+      }
+    }
   }
 
   updateDossierCard(data) {
@@ -829,6 +1400,20 @@ export class MequinenzaViewer {
     if (evidenceEl) evidenceEl.textContent = `● ${data.evidence}`;
     if (descEl) descEl.textContent = data.desc;
     if (factEl) factEl.textContent = data.historyFact;
+
+    // Acciones de calle y composición fotográfica en la ficha
+    const blendBtn = document.getElementById('dossier-photo-blend-btn');
+    if (blendBtn) {
+      const hasPhotoMatch = !!data.photoMatch;
+      blendBtn.style.display = hasPhotoMatch ? 'inline-flex' : 'none';
+      if (hasPhotoMatch) {
+        blendBtn.innerHTML = `<span>📷</span> <span>Componer con Foto Real (${data.photoMatch.year})</span>`;
+      }
+    }
+    const streetBtn = document.getElementById('dossier-street-view-btn');
+    if (streetBtn) {
+      streetBtn.style.display = data.streetCam ? 'inline-flex' : 'none';
+    }
 
     if (photoCountEl) {
       photoCountEl.textContent = `(${data.photos ? data.photos.length : 0} fotos)`;
@@ -988,6 +1573,31 @@ export class MequinenzaViewer {
       });
     }
 
+    // Controles de Modo de Perspectiva (Aérea vs A Pie de Calle vs Composición)
+    document.getElementById('btn-view-aerial')?.addEventListener('click', () => this.setPerspectiveMode('aerial'));
+    document.getElementById('btn-view-street')?.addEventListener('click', () => this.setPerspectiveMode('street'));
+    document.getElementById('btn-view-blend')?.addEventListener('click', () => this.openPhotoBlend(this.activeLandmarkId));
+
+    // Acciones dentro de la Ficha Histórica (Dossier)
+    document.getElementById('dossier-street-view-btn')?.addEventListener('click', () => this.setPerspectiveMode('street'));
+    document.getElementById('dossier-photo-blend-btn')?.addEventListener('click', () => this.openPhotoBlend(this.activeLandmarkId));
+
+    // Controles de la Composición con Foto Histórica (Photo Blend HUD)
+    document.getElementById('blend-hud-close-btn')?.addEventListener('click', () => this.closePhotoBlend());
+    document.getElementById('blend-mode-fade')?.addEventListener('click', () => this.setPhotoBlendMode('fade'));
+    document.getElementById('blend-mode-split')?.addEventListener('click', () => this.setPhotoBlendMode('split'));
+    document.getElementById('blend-opacity-slider')?.addEventListener('input', (e) => {
+      this.updatePhotoBlendVisual(parseInt(e.target.value, 10));
+    });
+
+    // Selector rápido de calles históricas a nivel de suelo
+    document.querySelectorAll('[data-street-wp]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const wpId = btn.dataset.streetWp;
+        if (wpId) this.walkToStreetWaypoint(wpId);
+      });
+    });
+
     // CIERRE ROBUSTO DEL LIGHTBOX
     const lb = document.getElementById('global-photo-lightbox');
     if (lb) {
@@ -1018,6 +1628,7 @@ export class MequinenzaViewer {
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         this.closeLightbox();
+        this.closePhotoBlend();
         document.querySelectorAll('.poble-modal-backdrop').forEach(m => m.classList.remove('active'));
         document.getElementById('historical-dossier-card')?.classList.remove('visible');
         document.querySelector('.sidebar-nav')?.classList.remove('mobile-open');
@@ -1047,6 +1658,11 @@ export class MequinenzaViewer {
 
       this.camera.position.lerpVectors(this.camStartPos, this.camEndPos, ease);
       this.controls.target.lerpVectors(this.targetStartPos, this.targetEndPos, ease);
+
+      if (this.fovStart !== this.fovEnd) {
+        this.camera.fov = this.fovStart + (this.fovEnd - this.fovStart) * ease;
+        this.camera.updateProjectionMatrix();
+      }
 
       if (progress >= 1.0) {
         this.isAnimatingCamera = false;
