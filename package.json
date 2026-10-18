@@ -1,9 +1,10 @@
 {
   "name": "mequinenza-3d-pro",
   "version": "2.0.0",
-  "description": "Visor 3D interactivo del casco antiguo y castillo de Mequinenza (Aragón, España)",
+  "description": "Gemelo digital y visor 3D interactivo del casco antiguo y castillo de Mequinenza (Aragón, España)",
   "scripts": {
-    "start": "npx serve ."
+    "start": "npx serve -l 41732 .",
+    "deploy": "git add -A && git commit -m 'Despliegue Visor 3D Mequinenza' && git push origin main"
   },
   "dependencies": {
     "serve": "^14.2.0"

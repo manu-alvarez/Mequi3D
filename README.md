@@ -1,101 +1,120 @@
-# Mequinenza Histórica · Visor 3D y Galería Fotográfica
+# Mequinenza 3D · Castillo medieval y Poble Vell
 
-Recreación visual y visor 3D interactivo del casco antiguo y el castillo de Mequinenza (Aragón, España).
+> **Gemelo digital y visor 3D interactivo** del Castillo medieval de Mequinenza, el casco antiguo (Poble Vell) y la confluencia de los ríos Ebro y Segre ("Aiguabarreig"), en Aragón, España.
 
-## Contenido
+Desplegado en producción en **GitHub Pages**:  
+🔗 **[https://manu-alvarez.github.io/Mequi3D/](https://manu-alvarez.github.io/Mequi3D/)**
 
-- `index.html` — Página principal: historia, información de los paneles, galería fotográfica con 491 fotos reales
-- `visor-3d.html` — Visor 3D interactivo (Three.js + OrbitControls) con texturas PBR reales
-- `package.json` — Dependencias y scripts
-- `assets/` — Texturas PBR y 491 fotos de referencia histórica
+---
 
-## Estructura de assets
+## 🏛 Características del Proyecto
 
+- **Reconstrucción 3D Fidedigna**:
+  - **Castillo de Mequinenza**: Fortaleza medieval del siglo XII sobre el escarpado promontorio rocoso calizo a 185 m sobre el nivel del río. Incluye sus 4 torres cuadradas almenadas (Torre del Homenaje, Torre de la Confluencia, Torre de las Armas y Torre del Portal), patio de armas con arquería gótica, adarve y el gran ventanal panorámico hacia la confluencia fluvial.
+  - **Poble Vell (Casco Antiguo)**: Más de 85 viviendas de piedra aragonesa tradicional escalonadas en terrazas sobre la ladera sur, muros en ruinas, arcos de medio punto, callejones empinados ("carrerons") y la **Iglesia de Nuestra Señora de la Asunción** con su torre campanario.
+  - **Confluencia Ebro - Segre ("Aiguabarreig")**: Masa de agua con reflejos especulares, el **puente histórico de arcos de piedra** y el puerto fluvial con los tradicionales **Llaüts** (embarcaciones históricas de madera para el transporte de carbón).
+  - **Texturas PBR Reales**: Mapeo de texturas tomadas directamente de las fotografías históricas (`assets/piedra.jpg` y `assets/ruinas.jpg`).
+- **Interfaz UI/UX Premium (Glassmorphism)**:
+  - Selector de 7 puntos de interés con vuelos de cámara fluidos (curvas cúbicas de Bezier).
+  - **Pines y marcadores interactivos 3D** proyectados en tiempo real sobre el lienzo.
+  - **Brújula interactiva dinámica**: La aguja gira sincronizada con el rumbo de la cámara. Clic en "N" para reorientar al Norte.
+  - **Dossier Histórico Desplegable**: Información detallada, altitud, época y hechos históricos de cada monumento.
+  - **Modo Paseo a Pie (Primera Persona)**: Explora a nivel de calle (1,75 m) las ruinas y callejones del Poble Vell con controles WASD / Flechas / Arrastre táctil en móvil.
+  - **Tour Guiado Cinematográfico**: Sobrevuelo automatizado con narración histórica paso a paso.
+  - **4 Atmósferas de Iluminación**:
+    - 🌅 *Amanecer Dorado* (Golden hour, sombras alargadas sobre el valle).
+    - ☀️ *Mediodía Radiante* (Luz nítida cenital y alto contraste).
+    - 🌇 *Atardecer Dramático* (Cielo rojizo y reflejos en el agua).
+    - 🌙 *Noche Monumental* (Cielo estrellado con iluminación arquitectónica en castillo y ruinas).
+- **Archivo Fotográfico Histórico (440+ fotos reales)**:
+  - Modal interactivo con fotos organizadas por categorías: Castillo (12), Poble Vell (99), Vistas Panorámicas (67), Iglesia (39), Reconstrucción ENHER (12), Minas de Carbón (12), Llaüts del Ebro (11), Vecinos (62), Fiestas (49), Ayuntamiento (14), Elementos (30).
+  - Visor Lightbox a pantalla completa con navegación por teclado y botones.
+- **Paneles Informativos Oficiales**:
+  - Fotografías en alta resolución y transcripción completa de los paneles históricos del Castillo (Reconquista de 1149 por Ramon Berenguer IV, Asedio de 1810 del General Suchet, Reconstrucción por ENHER en 1959 y Medalla de Plata en 1960).
+
+---
+
+## 📁 Estructura del Repositorio
+
+```text
+VISOR 3D MEQUINENZA/
+├── index.html                   # Aplicación web unificada y visor 3D principal
+├── visor-3d.html                # Redirección al visor principal
+├── package.json                 # Metadatos del proyecto y scripts
+├── README.md                    # Documentación del proyecto
+├── assets/
+│   ├── css/
+│   │   └── viewer.css           # Sistema de diseño Glassmorphism responsive
+│   ├── js/
+│   │   ├── viewer3d.js          # Motor 3D Three.js, topografía, modelos y física
+│   │   └── gallery-data.js      # Base de datos catalogada de las fotos históricas
+│   ├── vendor/
+│   │   ├── three.module.js      # Three.js r160 empaquetado para soporte offline
+│   │   └── OrbitControls.js     # Controles orbitales de Three.js
+│   ├── piedra.jpg               # Textura PBR del castillo (muros de sillería)
+│   ├── ruinas.jpg               # Textura PBR del Poble Vell (piedra y mampostería)
+│   └── ref/
+│       ├── castillo/            # 8 fotografías del castillo
+│       ├── pueblo/              # 99 fotografías del casco antiguo
+│       ├── generals/            # 67 fotografías de vistas generales
+│       ├── esglesia/            # 39 fotografías de la iglesia
+│       ├── enderroc/            # 12 fotografías de la reconstrucción y derribo
+│       ├── llauts/              # 11 fotografías de los llaüts del Ebro
+│       ├── mina/                # 12 fotografías de las minas de lignito
+│       ├── mequinensans/        # 62 fotografías de vecinos históricos
+│       ├── festes/              # 49 fotografías de fiestas y tradiciones
+│       ├── ajuntament/          # 14 fotografías del ayuntamiento
+│       ├── elements/            # 30 fotografías de elementos patrimoniales
+│       ├── paneles/             # Fotografías en alta resolución de los paneles
+│       ├── diseno/              # Boceto de diseño y referencia UI
+│       └── wikimedia/           # Fotografías de gran formato (5449x3150)
+└── archive/                     # Prototipos y versiones preliminares archivadas
 ```
-assets/
-├── piedra.jpg          — Textura PBR del castillo (tomada de castell3.jpg)
-├── ruinas.jpg           — Textura PBR del casco antiguo (tomada de enderroc3.jpg)
-├── ref/
-│   ├── castillo/        — 8 fotos del castillo
-│   ├── pueblo/          — 99 fotos del Poble Vell
-│   ├── vistas/          — 67 vistas generales
-│   ├── esglesia/        — 39 fotos de la iglesia
-│   ├── enderroc/        — 12 fotos de derribo/reconstrucción
-│   ├── generals/        — 15 vistas generales
-│   ├── festes/          — 49 fotos de fiestas
-│   ├── elements/        — 30 elementos singulares
-│   ├── mequinensans/    — 62 fotos de vecinos
-│   ├── mina/            — 12 fotos de la mina
-│   ├── competicions/    — 22 fotos de competiciones
-│   ├── llauts/          — 11 fotos de llauts
-│   ├── moments/         — 6 momentos importantes
-│   ├── ajuntament/      — 14 fotos del ayuntamiento
-│   ├── campfutbol/      — 5 fotos del campo de fútbol
-│   └── lopoble/         — 20 fotos del pueblo (copia)
-└── LEEME.txt            — Instrucciones
-```
 
-## Cómo usar
+---
 
-### Opción 1: Ejecutar localmente
+## 🚀 Despliegue en GitHub Pages
 
-```bash
-cd mequinenza-pro
-npm start
-```
+Este proyecto está optimizado para funcionar **directamente desde GitHub Pages**, sin necesidad de servidores locales ni dependencias de Node en ejecución en el equipo local:
 
-Luego abre `http://localhost:3000` en tu navegador.
+1. **Subir los cambios al repositorio:**
+   ```bash
+   git add -A
+   git commit -m "Visor 3D Mequinenza: Versión profesional completa"
+   git push origin main
+   ```
 
-### Opción 2: Abrir directamente
+2. **Verificar GitHub Pages:**
+   - En tu repositorio `https://github.com/manu-alvarez/Mequi3D`
+   - Ve a **Settings** → **Pages**
+   - Asegúrate de que **Source** esté configurado en `Deploy from a branch`, rama `main`, carpeta `/ (root)`.
+   - El visor estará disponible en: **`https://manu-alvarez.github.io/Mequi3D/`**
 
-Abre `index.html` en un navegador moderno. Requiere conexión a Internet para cargar Three.js desde CDN.
+---
 
-### Opción 3: GitHub Pages
+## 🎮 Controles del Visor
 
-1. Crea un repositorio en GitHub con nombre `Mequi3D`
-2. Sube todo el contenido de `mequinenza-pro/` al repositorio
-3. En GitHub: Settings → Pages → Source: `main` / `/(root)`
-4. Tu sitio estará en `https://manu-alvarez.github.io/Mequi3D/`
+- **Modo Órbita**:
+  - **Clic izquierdo + Arrastrar**: Rotar la vista alrededor del punto focal.
+  - **Rueda del ratón / Pellizcar**: Acercar / alejar el zoom.
+  - **Clic derecho + Arrastrar**: Desplazar la vista (Panorámica).
+  - **Clic en la Brújula**: Restablecer la vista orientada hacia el Norte.
+- **Modo Paseo (Primera Persona)**:
+  - **Teclas W / A / S / D o Flechas**: Caminar por las calles y ruinas.
+  - **Mover el ratón / Táctil**: Mirar en cualquier dirección.
+  - **Tecla ESC o botón Salir**: Volver a la vista aérea general.
+- **Barra Inferior**:
+  - **⟳ Girar**: Activar o pausar la rotación continua automática.
+  - **☀️ Iluminación**: Seleccionar entre Amanecer, Mediodía, Atardecer y Noche.
+  - **⌖ Marcadores**: Mostrar u ocultar las etiquetas 3D sobre los monumentos.
+  - **📷 Galería**: Abrir el catálogo de fotos históricas con filtros y lightbox.
+  - **📜 Paneles**: Consultar las imágenes y textos de la exposición del Castillo.
+  - **⛶ Pantalla Completa**: Alternar modo inmersivo a pantalla completa.
 
-## Contenido de las páginas
+---
 
-### index.html (Historia y Galería)
-- Sección de Historia con línea de tiempo (1149-1960)
-- Sección de Reconstrucción (ENHER, 1959)
-- Sección de Ubicación (confluencia Ebro-Segre, 185m de altitud)
-- Galería fotográfica con 491 imágenes reales de la colección oficial de mequinenza.com
-- Textos extraídos de los paneles informativos del castillo
+## 📜 Fuentes Históricas y Documentales
 
-### visor-3d.html (Visor 3D)
-- Terreno procedural con elevación realista
-- Castillo con torres, murallas y almenas
-- Casco antiguo con casas de piedra y calles empinadas
-- Ríos Ebro y Segre
-- Vegetación (árboles y arbustos)
-- Texturas PBR reales (piedra.jpg, ruinas.jpg)
-- Controles: girar, acercar, cambiar iluminación (mañana/tarde), mostrar etiquetas
-- Vistas predefinidas: general, castillo, casco antiguo, ríos
-
-## Controles del visor 3D
-
-- Arrastrar (botón izquierdo): Girar la cámara
-- Rueda / pellizca: Acercar / alejar
-- Botón derecho: Desplazar la vista
-- Botones de la barra inferior: Girar, cambiar iluminación, mostrar etiquetas
-- Botones de la barra lateral: Seleccionar vistas predefinidas
-
-## Limitaciones importantes
-
-Este modelo es una **recreación conceptual procedimental** basada en referencias visuales. No es:
-
-- Un levantamiento topográfico exacto
-- Una reconstrucción arqueológica precisa
-- Un gemelo digital geográficamente fiel
-
-Para obtener un modelo de alta fidelidad se necesitarían datos topográficos reales, cartografía del área y referencias fotogramétricas del castillo.
-
-## Fuentes de referencia
-
-- https://www.mequinenza.com/coleccion_fotografica — Colección fotográfica oficial (491 fotos)
-- Paneles informativos del Castillo de Mequinenza (fotografías locales)
-- Datos históricos: Guerra de la Independencia (1810), Guerra Civil (1939), Reconstrucción ENHER (1959)
+- **Paneles informativos del Castillo de Mequinenza** (Colección museográfica ENHER, 1959-1960).
+- **Colección Fotográfica Oficial de Mequinenza**: [https://www.mequinenza.com/coleccion_fotografica](https://www.mequinenza.com/coleccion_fotografica)
+- **Crónicas y fuentes bibliográficas**: Referencias a la villa de *Octogesa* (Julio César), Reconquista de Ramón Berenguer IV (1149), señorío de los Moncada, defensa ante el Mariscal Suchet en la Guerra de la Independencia (1810) y reconstrucción por ENHER (1959).

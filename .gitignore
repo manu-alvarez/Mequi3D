@@ -1,0 +1,6 @@
+.DS_Store
+*.zip
+archive/
+prompt.md
+.vscode/
+node_modules/
